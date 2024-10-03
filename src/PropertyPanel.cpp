@@ -112,12 +112,12 @@ void PropertyPanel::SetSelectedObject(CanvasObject* object) {
 void PropertyPanel::OnPositionXChanged(wxCommandEvent& event) {
     if (m_selectedObject) {
         long x;
-        if (m_positionXCtrl->GetValue().ToLong(&x)) {
+        if (m_positionXCtrl->GetValue().ToLong(&x)) {  // X 좌표 값 컨트롤에서 읽기
             wxPoint pos = m_selectedObject->GetPosition();
-            pos.x = x;
-            m_selectedObject->SetPosition(pos);
+            pos.x = x;                          // 새 X 좌표 설정
+            m_selectedObject->SetPosition(pos); // CanvasObject에 위치 반영
             if (m_canvasPanel) {
-                m_canvasPanel->RefreshCanvas();
+                m_canvasPanel->RefreshCanvas();  // 캔버스를 다시 그려서 변경 사항 반영
             }
         }
     }
@@ -126,12 +126,12 @@ void PropertyPanel::OnPositionXChanged(wxCommandEvent& event) {
 void PropertyPanel::OnPositionYChanged(wxCommandEvent& event) {
     if (m_selectedObject) {
         long y;
-        if (m_positionYCtrl->GetValue().ToLong(&y)) {
+        if (m_positionYCtrl->GetValue().ToLong(&y)) {   // Y 좌표 값 컨트롤에서 읽기
             wxPoint pos = m_selectedObject->GetPosition();
-            pos.y = y;
-            m_selectedObject->SetPosition(pos);
+            pos.y = y;                                 // 새 Y 좌표 설정
+            m_selectedObject->SetPosition(pos);        // CanvasObject에 위치 반영
             if (m_canvasPanel) {
-                m_canvasPanel->RefreshCanvas();
+                m_canvasPanel->RefreshCanvas();         // 캔버스 리프레시
             }
         }
     }
