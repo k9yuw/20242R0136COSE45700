@@ -2,54 +2,95 @@
 
 // 컨트롤 ID 정의
 enum {
-    ID_POSITION_X = wxID_HIGHEST + 1, // wxID 중 사용하지 않은 것부터 사용하기 위해 가장 큰 것 + 1 부터 시작
+    ID_POSITION_X = wxID_HIGHEST + 1,
     ID_POSITION_Y,
     ID_WIDTH,
     ID_HEIGHT,
-    ID_ZORDER
+    ID_ZORDER,
+    ID_ADD_IMAGE,    
+    ID_ADD_TEXT,       
+    ID_ADD_LINE,        
+    ID_ADD_RECTANGLE,  
+    ID_ADD_ELLIPSE     
 };
 
 // 이벤트 테이블 설정
 wxBEGIN_EVENT_TABLE(PropertyPanel, wxPanel)
-    EVT_TEXT(ID_POSITION_X, PropertyPanel::OnPositionXChanged) // ID_POSITION_X 변경 시 OnPositionXChanged 호출
+    EVT_TEXT(ID_POSITION_X, PropertyPanel::OnPositionXChanged)
     EVT_TEXT(ID_POSITION_Y, PropertyPanel::OnPositionYChanged)
     EVT_TEXT(ID_WIDTH, PropertyPanel::OnWidthChanged)
     EVT_TEXT(ID_HEIGHT, PropertyPanel::OnHeightChanged)
     EVT_TEXT(ID_ZORDER, PropertyPanel::OnZOrderChanged)
+
+    EVT_BUTTON(ID_ADD_IMAGE, PropertyPanel::OnAddImage)
+    EVT_BUTTON(ID_ADD_TEXT, PropertyPanel::OnAddText)
+    EVT_BUTTON(ID_ADD_LINE, PropertyPanel::OnAddLine)
+    EVT_BUTTON(ID_ADD_RECTANGLE, PropertyPanel::OnAddRectangle)
+    EVT_BUTTON(ID_ADD_ELLIPSE, PropertyPanel::OnAddEllipse)
 wxEND_EVENT_TABLE()
 
 // 생성자
 PropertyPanel::PropertyPanel(wxWindow* parent)
     : wxPanel(parent), m_selectedObject(nullptr), m_canvasPanel(nullptr) {
-    wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL); // 수직으로 컨트롤 배치하는 박스인 sizer 생성
+    
+    wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL); // 메인 수직 sizer
 
-    // 위치 설정 라벨, 컨트롤
-    wxStaticText* posLabel = new wxStaticText(this, wxID_ANY, "Position:");
-    m_positionXCtrl = new wxTextCtrl(this, ID_POSITION_X);
-    m_positionYCtrl = new wxTextCtrl(this, ID_POSITION_Y);
+    // wxFlexGridSizer로 그리드 형식 구성
+    wxFlexGridSizer* gridSizer = new wxFlexGridSizer(2, 5, 5); // 2열, 5px 간격으로 배치
+    
+    // 첫 번째 열은 기본 너비로, 두 번째 열은 확장 가능하도록 설정
+    gridSizer->AddGrowableCol(1); 
 
-    // 크기 설정 라벨, 컨트롤
-    wxStaticText* sizeLabel = new wxStaticText(this, wxID_ANY, "Size:");
-    m_widthCtrl = new wxTextCtrl(this, ID_WIDTH);
-    m_heightCtrl = new wxTextCtrl(this, ID_HEIGHT);
+    // 위치 설정 라벨, 컨트롤 (라벨의 최대 너비 설정)
+    wxStaticText* posXLabel = new wxStaticText(this, wxID_ANY, "x값:");
+    m_positionXCtrl = new wxTextCtrl(this, ID_POSITION_X, "", wxDefaultPosition, wxSize(80, -1));
 
-    // Z-순서 설정 라벨, 컨트롤
-    wxStaticText* zOrderLabel = new wxStaticText(this, wxID_ANY, "Z-Order:");
-    m_zOrderCtrl = new wxTextCtrl(this, ID_ZORDER);
+    wxStaticText* posYLabel = new wxStaticText(this, wxID_ANY, "y값:");
+    m_positionYCtrl = new wxTextCtrl(this, ID_POSITION_Y, "", wxDefaultPosition, wxSize(80, -1));
 
-    // sizer에 각 라벨, 컨트롤 추가
-    sizer->Add(posLabel, 0, wxALL, 5);
-    sizer->Add(m_positionXCtrl, 0, wxALL | wxEXPAND, 5);
-    sizer->Add(m_positionYCtrl, 0, wxALL | wxEXPAND, 5);
+    // 크기 설정 라벨, 컨트롤 (라벨의 최대 너비 설정)
+    wxStaticText* widthLabel = new wxStaticText(this, wxID_ANY, "너비:");
+    m_widthCtrl = new wxTextCtrl(this, ID_WIDTH, "", wxDefaultPosition, wxSize(80, -1));
 
-    sizer->Add(sizeLabel, 0, wxALL, 5);
-    sizer->Add(m_widthCtrl, 0, wxALL | wxEXPAND, 5);
-    sizer->Add(m_heightCtrl, 0, wxALL | wxEXPAND, 5);
+    wxStaticText* heightLabel = new wxStaticText(this, wxID_ANY, "높이:");
+    m_heightCtrl = new wxTextCtrl(this, ID_HEIGHT, "", wxDefaultPosition, wxSize(80, -1));
 
-    sizer->Add(zOrderLabel, 0, wxALL, 5);
-    sizer->Add(m_zOrderCtrl, 0, wxALL | wxEXPAND, 5);
+    wxStaticText* zOrderLabel = new wxStaticText(this, wxID_ANY, "z값:");
+    m_zOrderCtrl = new wxTextCtrl(this, ID_ZORDER, "", wxDefaultPosition, wxSize(80, -1));
 
-    SetSizer(sizer);
+    // GridSizer에 라벨과 컨트롤을 추가
+    gridSizer->Add(posXLabel, 0, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+    gridSizer->Add(m_positionXCtrl, 0, wxALL | wxEXPAND, 5);
+
+    gridSizer->Add(posYLabel, 0, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+    gridSizer->Add(m_positionYCtrl, 0, wxALL | wxEXPAND, 5);
+
+    gridSizer->Add(widthLabel, 0, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+    gridSizer->Add(m_widthCtrl, 0, wxALL | wxEXPAND, 5);
+
+    gridSizer->Add(heightLabel, 0, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+    gridSizer->Add(m_heightCtrl, 0, wxALL | wxEXPAND, 5);
+
+    gridSizer->Add(zOrderLabel, 0, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+    gridSizer->Add(m_zOrderCtrl, 0, wxALL | wxEXPAND, 5);
+
+    // 객체 추가 버튼 생성
+    wxButton* addImageButton = new wxButton(this, ID_ADD_IMAGE, "이미지 추가");
+    wxButton* addTextButton = new wxButton(this, ID_ADD_TEXT, "텍스트 추가");
+    wxButton* addLineButton = new wxButton(this, ID_ADD_LINE, "선 추가");
+    wxButton* addRectangleButton = new wxButton(this, ID_ADD_RECTANGLE, "사각형 추가");
+    wxButton* addEllipseButton = new wxButton(this, ID_ADD_ELLIPSE, "원 추가");
+
+    // 메인 sizer에 gridSizer와 객체 추가 버튼들을 추가
+    mainSizer->Add(gridSizer, 0, wxALL | wxEXPAND, 10);
+    mainSizer->Add(addImageButton, 0, wxALL | wxEXPAND, 5);
+    mainSizer->Add(addTextButton, 0, wxALL | wxEXPAND, 5);
+    mainSizer->Add(addLineButton, 0, wxALL | wxEXPAND, 5);
+    mainSizer->Add(addRectangleButton, 0, wxALL | wxEXPAND, 5);
+    mainSizer->Add(addEllipseButton, 0, wxALL | wxEXPAND, 5);
+
+    // sizer 설정
+    SetSizer(mainSizer);
 
     // 초기에는 컨트롤들을 비활성화
     m_positionXCtrl->Disable();
@@ -57,55 +98,6 @@ PropertyPanel::PropertyPanel(wxWindow* parent)
     m_widthCtrl->Disable();
     m_heightCtrl->Disable();
     m_zOrderCtrl->Disable();
-}
-
-// 값 변경시 canvas panel refresh 하기 위함. 
-void PropertyPanel::SetCanvasPanel(CanvasPanel* canvasPanel) {
-    m_canvasPanel = canvasPanel;
-}
-
-// object가 선택되면 -> 선택된 object의 속성값을 property panel에 띄워주는 함수
-void PropertyPanel::SetSelectedObject(CanvasObject* object) {
-    m_selectedObject = object;
-    
-    if (object) {
-        // CanvasObject 가리키는 포인터인 m_selectedObject의 내부 콜백함수로 PropertyPanel을 등록한다.
-        // CanvasObject에서 setPosition, setSize, setZOrder이 호출되면
-        // set 함수들이 callback 함수로 등록된 PropertyPanel을 콜백함수로써 호출
-        auto updateControls = [this]() {
-            if (m_selectedObject) {
-                m_positionXCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetPosition().x));
-                m_positionYCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetPosition().y));
-                m_widthCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetSize().GetWidth()));
-                m_heightCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetSize().GetHeight()));
-                m_zOrderCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetZOrder()));
-            }
-        };
-
-        m_selectedObject->SetOnChangeCallback(updateControls);  // 콜백으로 등록
-
-        updateControls();  // 초기 값 설정 시 바로 호출
-
-        // 컨트롤 활성화
-        m_positionXCtrl->Enable();
-        m_positionYCtrl->Enable();
-        m_widthCtrl->Enable();
-        m_heightCtrl->Enable();
-        m_zOrderCtrl->Enable();
-    } else {
-        // 선택된 object가 없으면 컨트롤을 비우고 비활성화
-        m_positionXCtrl->SetValue("");
-        m_positionYCtrl->SetValue("");
-        m_widthCtrl->SetValue("");
-        m_heightCtrl->SetValue("");
-        m_zOrderCtrl->SetValue("");
-
-        m_positionXCtrl->Disable();
-        m_positionYCtrl->Disable();
-        m_widthCtrl->Disable();
-        m_heightCtrl->Disable();
-        m_zOrderCtrl->Disable();
-    }
 }
 
 
@@ -176,4 +168,29 @@ void PropertyPanel::OnZOrderChanged(wxCommandEvent& event) {
             }
         }
     }
+}
+
+// 이미지 추가 버튼 클릭 시 호출
+void PropertyPanel::OnAddImage(wxCommandEvent& event) {
+
+}
+
+// 텍스트 추가 버튼 클릭 시 호출
+void PropertyPanel::OnAddText(wxCommandEvent& event) {
+
+}
+
+// 선 추가 버튼 클릭 시 호출
+void PropertyPanel::OnAddLine(wxCommandEvent& event) {
+
+}
+
+// 사각형 추가 버튼 클릭 시 호출
+void PropertyPanel::OnAddRectangle(wxCommandEvent& event) { 
+
+}
+
+// 타원 추가 버튼 클릭 시 호출
+void PropertyPanel::OnAddEllipse(wxCommandEvent& event) {
+
 }
