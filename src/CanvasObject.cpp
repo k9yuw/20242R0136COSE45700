@@ -51,3 +51,10 @@ void CanvasObject::SetZOrder(int zOrder) {
 void CanvasObject::SetOnChangeCallback(std::function<void()> callback) {
     m_onChangeCallback = callback;  // 외부에서 콜백 등록
 }
+
+// 마우스가 객체의 오른쪽 하단 모서리 근처에 있는지 확인: 크기조절 시 사용
+bool CanvasObject::isMouseNearEdge(const wxPoint& point, int margin) const {
+    wxRect rect(m_position, m_size);  
+    return (abs(point.x - (m_position.x + m_size.GetWidth())) <= margin &&
+            abs(point.y - (m_position.y + m_size.GetHeight())) <= margin);
+}

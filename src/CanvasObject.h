@@ -14,6 +14,7 @@ public:
 
     // 마우스 좌표가 객체 내부에 있는지 확인
     virtual bool isMouseInside(const wxPoint& point) const;
+    virtual bool isMouseNearEdge(const wxPoint&, int margin) const;
 
     // Getter, Setter
     wxPoint GetPosition() const;

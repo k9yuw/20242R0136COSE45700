@@ -1,15 +1,14 @@
 #include "CanvasPanel.h"
 
 wxBEGIN_EVENT_TABLE(CanvasPanel, wxPanel)
-    EVT_PAINT(CanvasPanel::OnPaint)                // 그리기 이벤트
     EVT_LEFT_DOWN(CanvasPanel::OnMouseClickStart)  // 마우스 왼쪽 버튼 눌림
-    EVT_MOTION(CanvasPanel::OnMouseMove)           // 마우스 이동
+    EVT_MOTION(CanvasPanel::OnMouseMove)           // 마우스 이동 (이동 또는 크기 조정)
     EVT_LEFT_UP(CanvasPanel::OnMouseClickEnd)      // 마우스 왼쪽 버튼 뗌
 wxEND_EVENT_TABLE()
 
 // 생성자
 CanvasPanel::CanvasPanel(wxWindow* parentWindow)
-    : wxPanel(parentWindow), isMouseDrawing(false), m_selectedObject(nullptr) {
+    : wxPanel(parentWindow), m_isMouseClicked(false), m_isDragging(false), m_selectedObject(nullptr) {
     // 캔버스 초기화
     SetBackgroundColour(*wxWHITE);
     SetMinSize(wxSize(400, 300));
@@ -42,49 +41,61 @@ void CanvasPanel::RefreshCanvas() {
     Refresh();  
 }
 
-// 그리기 이벤트핸들러
-void CanvasPanel::OnPaint(wxPaintEvent& event) {
 
-    wxPaintDC dc(this);
-    for (auto object : m_objects) {
-        object->Draw(dc);
-    }
-
-    // 현재 마우스 드로잉 상태일 때
-    if (isMouseDrawing) {
-        dc.SetPen(*wxBLACK_PEN);
-        dc.DrawLine(mouseLastPoint, ScreenToClient(wxGetMousePosition()));
-    }
-}
-
+// 마우스가 클릭될 때 호출되는 함수
 void CanvasPanel::OnMouseClickStart(wxMouseEvent& event) {
-    isMouseDrawing = true;                  
-    mouseLastPoint = event.GetPosition();  
+    m_isMouseClicked = true;                  
+    m_mouseLastPoint = event.GetPosition();   
 
-    // 마우스 위치에서 객체를 찾기
-    wxPoint pos = event.GetPosition();
+    wxPoint pos = event.GetPosition();  
+
     for (auto it = m_objects.rbegin(); it != m_objects.rend(); ++it) {
-        if ((*it)->isMouseInside(pos)) {
-            m_selectedObject = *it; 
-            Refresh();               
+        // 객체 모서리 근처에서 클릭한 경우: 크기 조정 모드
+        if ((*it)->isMouseNearEdge(pos, 10)) { 
+            m_selectedObject = *it;
+            m_isResizing = true; 
+            m_originalPosition = m_selectedObject->GetPosition();
+            m_originalSize = m_selectedObject->GetSize();  // 객체의 원래 크기 저장
+            return;
+        }
+        // 객체 내부에서 클릭한 경우: 이동 모드
+        else if ((*it)->isMouseInside(pos)) { 
+            m_selectedObject = *it;
+            m_isDragging = true;  
+            m_dragStartPos = pos;
+            m_originalPosition = m_selectedObject->GetPosition();
             return;
         }
     }
-    m_selectedObject = nullptr; 
-    Refresh();
+
+    m_selectedObject = nullptr;  // 객체가 없으면 선택된 객체를 null로 설정
+    Refresh(); 
 }
 
-// 마우스 이동 이벤트 핸들러
+// 마우스가 움직일 때 호출되는 함수 (이동 또는 크기 조정)
 void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
-    if (isMouseDrawing && event.Dragging() && event.LeftIsDown()) {
-        wxClientDC dc(this); 
-        dc.SetPen(*wxBLACK_PEN);
-        dc.DrawLine(mouseLastPoint, event.GetPosition()); 
-        mouseLastPoint = event.GetPosition();             
+    // 위치 변경 처리
+    if (m_isDragging && m_selectedObject) {
+        wxPoint currentPos = event.GetPosition(); 
+        wxPoint newPosition = m_originalPosition + (currentPos - m_dragStartPos);  // 마우스 이동량에 따라 새 위치 계산
+        m_selectedObject->SetPosition(newPosition);  
+        Refresh();  
+    }
+
+    // 크기 변경 처리
+    if (m_isResizing && m_selectedObject) {
+        wxPoint currentPos = event.GetPosition();
+        wxSize newSize = m_originalSize;
+        newSize.SetWidth(currentPos.x - m_originalPosition.x);  // 새 너비 설정
+        newSize.SetHeight(currentPos.y - m_originalPosition.y);  // 새 높이 설정
+        m_selectedObject->SetSize(newSize);  // 객체 크기 업데이트
+        Refresh();  
     }
 }
 
-// 마우스 왼쪽 버튼 뗌 이벤트 핸들러 
+// 마우스 버튼을 뗐을 때 호출되는 함수
 void CanvasPanel::OnMouseClickEnd(wxMouseEvent& event) {
-    isMouseDrawing = false; 
+    m_isMouseClicked = false; 
+    m_isDragging = false; 
+    m_isResizing = false; 
 }
