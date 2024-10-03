@@ -3,6 +3,7 @@
 
 #include <wx/wx.h>
 #include "CanvasPanel.h" 
+#include "PropertyPanel.h"
 
 class MainFrame : public wxFrame {
 public:
@@ -17,11 +18,13 @@ private:
     void CreateMenuBar();       // 메뉴 바 생성 
     void InitStatusBar();     // 상태 표시줄 생성
     void SetupCanvasPanel();    // 캔버스 패널 설정
+    void SetupPropertyPanel();   // 속성 패널 설정
 
     // 멤버 변수
     CanvasPanel* m_canvasPanel; 
+    PropertyPanel* m_propertyPanel;
 
-    wxDECLARE_EVENT_TABLE(); // 이벤트 테이블 선언
+    wxDECLARE_EVENT_TABLE(); 
 };
 
 #endif

@@ -49,6 +49,21 @@ void MainFrame::SetupCanvasPanel() {
     SetMinSize(wxSize(450, 350));
 }
 
+void MainFrame::SetupPropertyPanel() {
+    m_propertyPanel = new PropertyPanel(this);
+
+    // 메인 Sizer 생성
+    wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
+
+    // 상단 여백 추가
+    mainSizer->Add(m_canvasPanel, 1, wxEXPAND | wxALL, 20);
+
+    // Sizer를 프레임에 설정하고 레이아웃 적용
+    SetSizer(mainSizer);
+    Layout();
+
+}
+
 
 // 종료 메뉴 선택 시 호출되는 이벤트 핸들러
 void MainFrame::OnExit(wxCommandEvent& event) {
