@@ -18,6 +18,11 @@ private:
     void OnWidthChanged(wxCommandEvent& event);     // width 변경 시 호출되는 이벤트 핸들러
     void OnHeightChanged(wxCommandEvent& event);    // height 변경 시 호출되는 이벤트 핸들러
     void OnZOrderChanged(wxCommandEvent& event);    // z-order 변경 시 호출되는 이벤트 핸들러
+    void OnAddImage(wxCommandEvent& event);
+    void OnAddText(wxCommandEvent& event);
+    void OnAddLine(wxCommandEvent& event);
+    void OnAddRectangle(wxCommandEvent& event);
+    void OnAddEllipse(wxCommandEvent& event);
 
     CanvasObject* m_selectedObject;  // 선택된 object를 저장하는 포인터
     CanvasPanel* m_canvasPanel;      // 캔버스 패널을 저장하는 포인터
