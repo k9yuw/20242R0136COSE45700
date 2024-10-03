@@ -2,6 +2,7 @@
 #define CANVASOBJECT_H
 
 #include <wx/wx.h>
+#include <functional> 
 
 class CanvasObject {
 public:
@@ -24,10 +25,16 @@ public:
     int GetZOrder() const;
     void SetZOrder(int zOrder);
 
+    // 콜백 등록 함수
+    void SetOnChangeCallback(std::function<void()> callback);
+
 protected:
     wxPoint m_position;
     wxSize m_size;
     int m_zOrder;
+
+    // object 상태 변경 시 호출할 콜백
+    std::function<void()> m_onChangeCallback;  
 };
 
 #endif

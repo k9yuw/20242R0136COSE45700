@@ -66,15 +66,25 @@ void PropertyPanel::SetCanvasPanel(CanvasPanel* canvasPanel) {
 
 // object가 선택되면 -> 선택된 object의 속성값을 property panel에 띄워주는 함수
 void PropertyPanel::SetSelectedObject(CanvasObject* object) {
-    m_selectedObject = object; 
-
+    m_selectedObject = object;
+    
     if (object) {
-        // object 속성 값을 컨트롤에 표시
-        m_positionXCtrl->SetValue(wxString::Format("%d", object->GetPosition().x));
-        m_positionYCtrl->SetValue(wxString::Format("%d", object->GetPosition().y));
-        m_widthCtrl->SetValue(wxString::Format("%d", object->GetSize().GetWidth()));
-        m_heightCtrl->SetValue(wxString::Format("%d", object->GetSize().GetHeight()));
-        m_zOrderCtrl->SetValue(wxString::Format("%d", object->GetZOrder()));
+        // CanvasObject 가리키는 포인터인 m_selectedObject의 내부 콜백함수로 PropertyPanel을 등록한다.
+        // CanvasObject에서 setPosition, setSize, setZOrder이 호출되면
+        // set 함수들이 callback 함수로 등록된 PropertyPanel을 콜백함수로써 호출
+        auto updateControls = [this]() {
+            if (m_selectedObject) {
+                m_positionXCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetPosition().x));
+                m_positionYCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetPosition().y));
+                m_widthCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetSize().GetWidth()));
+                m_heightCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetSize().GetHeight()));
+                m_zOrderCtrl->SetValue(wxString::Format("%d", m_selectedObject->GetZOrder()));
+            }
+        };
+
+        m_selectedObject->SetOnChangeCallback(updateControls);  // 콜백으로 등록
+
+        updateControls();  // 초기 값 설정 시 바로 호출
 
         // 컨트롤 활성화
         m_positionXCtrl->Enable();
@@ -83,7 +93,7 @@ void PropertyPanel::SetSelectedObject(CanvasObject* object) {
         m_heightCtrl->Enable();
         m_zOrderCtrl->Enable();
     } else {
-        // 선택된 object가 없으면 아무것도 보여주지 않는다: 컨트롤을 비우고 비활성화
+        // 선택된 object가 없으면 컨트롤을 비우고 비활성화
         m_positionXCtrl->SetValue("");
         m_positionYCtrl->SetValue("");
         m_widthCtrl->SetValue("");
@@ -97,6 +107,7 @@ void PropertyPanel::SetSelectedObject(CanvasObject* object) {
         m_zOrderCtrl->Disable();
     }
 }
+
 
 void PropertyPanel::OnPositionXChanged(wxCommandEvent& event) {
     if (m_selectedObject) {

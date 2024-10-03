@@ -16,6 +16,10 @@ wxPoint CanvasObject::GetPosition() const {
 
 void CanvasObject::SetPosition(const wxPoint& position) {
     m_position = position;
+    // 변경 시 콜백 함수 호출
+    if(m_onChangeCallback) {
+        m_onChangeCallback();
+    }
 }
 
 wxSize CanvasObject::GetSize() const {
@@ -24,6 +28,10 @@ wxSize CanvasObject::GetSize() const {
 
 void CanvasObject::SetSize(const wxSize& size) {
     m_size = size;
+    // 변경 시 콜백 함수 호출
+    if(m_onChangeCallback) {
+        m_onChangeCallback();
+    }
 }
 
 int CanvasObject::GetZOrder() const {
@@ -32,4 +40,14 @@ int CanvasObject::GetZOrder() const {
 
 void CanvasObject::SetZOrder(int zOrder) {
     m_zOrder = zOrder;
+    // 변경 시 콜백 함수 호출
+    if(m_onChangeCallback) {
+        m_onChangeCallback();
+    }
+}
+
+// SetOnChangeCallBack은 m_onChangeCallback 멤버변수에 인자로 들어온 callback을 등록시키는 역할
+// 나중에 SetPosition이나 SetSize 등에서 m_onChangeCallback을 호출
+void CanvasObject::SetOnChangeCallback(std::function<void()> callback) {
+    m_onChangeCallback = callback;  // 외부에서 콜백 등록
 }
