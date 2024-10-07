@@ -5,12 +5,18 @@
 #include "CanvasObject.h"
 #include "CanvasPanel.h"
 
+
 class PropertyPanel : public wxPanel {
 public:
-    PropertyPanel(wxWindow* parentWindow);
+    PropertyPanel(wxWindow* parentWindow, CanvasPanel* canvasPanel); // 생성자
 
     void SetSelectedObject(CanvasObject* object);  // 선택된 객체의 속성을 설정하는 함수
     void SetCanvasPanel(CanvasPanel* canvasPanel); // 캔버스 패널을 설정하여 refresh
+    void OnAddImage(wxCommandEvent& event);     //public으로 선언해서 canvasPanel에서 호출 가능
+    void OnAddText(wxCommandEvent& event);
+    void OnAddLine(wxCommandEvent& event);
+    void OnAddRectangle(wxCommandEvent& event);
+    void OnAddEllipse(wxCommandEvent& event);
 
 private:
     void OnPositionXChanged(wxCommandEvent& event); // x좌표 변경 시 호출되는 이벤트 핸들러
@@ -18,11 +24,7 @@ private:
     void OnWidthChanged(wxCommandEvent& event);     // width 변경 시 호출되는 이벤트 핸들러
     void OnHeightChanged(wxCommandEvent& event);    // height 변경 시 호출되는 이벤트 핸들러
     void OnZOrderChanged(wxCommandEvent& event);    // z-order 변경 시 호출되는 이벤트 핸들러
-    void OnAddImage(wxCommandEvent& event);
-    void OnAddText(wxCommandEvent& event);
-    void OnAddLine(wxCommandEvent& event);
-    void OnAddRectangle(wxCommandEvent& event);
-    void OnAddEllipse(wxCommandEvent& event);
+
 
     CanvasObject* m_selectedObject;  // 선택된 object를 저장하는 포인터
     CanvasPanel* m_canvasPanel;      // 캔버스 패널을 저장하는 포인터

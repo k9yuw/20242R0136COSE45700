@@ -1,5 +1,5 @@
 #include "PropertyPanel.h"
-
+#include "TextObject.h" 
 // 컨트롤 ID 정의
 enum {
     ID_POSITION_X = wxID_HIGHEST + 1,
@@ -30,8 +30,8 @@ wxBEGIN_EVENT_TABLE(PropertyPanel, wxPanel)
 wxEND_EVENT_TABLE()
 
 // 생성자
-PropertyPanel::PropertyPanel(wxWindow* parent)
-    : wxPanel(parent), m_selectedObject(nullptr), m_canvasPanel(nullptr) {
+PropertyPanel::PropertyPanel(wxWindow* parent, CanvasPanel* canvasPanel)
+    : wxPanel(parent), m_selectedObject(nullptr), m_canvasPanel(canvasPanel) {
     
     wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL); // 메인 수직 sizer
 
@@ -93,8 +93,8 @@ PropertyPanel::PropertyPanel(wxWindow* parent)
     SetSizer(mainSizer);
 
     // 초기에는 컨트롤들을 비활성화
-    m_positionXCtrl->Disable();
-    m_positionYCtrl->Disable();
+    m_positionXCtrl->Enable();
+    m_positionYCtrl->Enable();
     m_widthCtrl->Disable();
     m_heightCtrl->Disable();
     m_zOrderCtrl->Disable();
@@ -177,7 +177,24 @@ void PropertyPanel::OnAddImage(wxCommandEvent& event) {
 
 // 텍스트 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddText(wxCommandEvent& event) {
+    // Enable the x and y input fields when the button is clicked
 
+
+    // Optionally set focus to the x coordinate input for a better user experience
+    m_positionXCtrl->SetFocus();
+
+    // Read the x and y values immediately after enabling them
+    long x = 0, y = 0;
+    m_positionXCtrl->GetValue().ToLong(&x);  // x 값 읽기
+    m_positionYCtrl->GetValue().ToLong(&y);  // y 값 읽기
+    // Create and add the TextObject to the canvas
+    if (m_canvasPanel) {
+        wxPoint position(x, y);
+        TextObject* text = new TextObject(position, "Sample Text", 20);
+        m_canvasPanel->AddObject(text);
+        m_canvasPanel->RefreshCanvas();
+
+    }
 }
 
 // 선 추가 버튼 클릭 시 호출

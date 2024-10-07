@@ -1,10 +1,12 @@
 #include "CanvasPanel.h"
-
+#include "PropertyPanel.h"
 wxBEGIN_EVENT_TABLE(CanvasPanel, wxPanel)
     EVT_LEFT_DOWN(CanvasPanel::OnMouseClickStart)  // 마우스 왼쪽 버튼 눌림
     EVT_MOTION(CanvasPanel::OnMouseMove)           // 마우스 이동 (이동 또는 크기 조정)
     EVT_LEFT_UP(CanvasPanel::OnMouseClickEnd)      // 마우스 왼쪽 버튼 뗌
+    EVT_PAINT(CanvasPanel::OnPaint)                // 화면 갱신
 wxEND_EVENT_TABLE()
+
 
 // 생성자
 CanvasPanel::CanvasPanel(wxWindow* parentWindow)
@@ -38,7 +40,7 @@ void CanvasPanel::SetSelectedObject(CanvasObject* object) {
 
 // 화면 갱신
 void CanvasPanel::RefreshCanvas() {
-    Refresh();  
+    Refresh();
 }
 
 
@@ -98,4 +100,10 @@ void CanvasPanel::OnMouseClickEnd(wxMouseEvent& event) {
     m_isMouseClicked = false; 
     m_isDragging = false; 
     m_isResizing = false; 
+}
+void CanvasPanel::OnPaint(wxPaintEvent& event) {
+    wxPaintDC dc(this);  // Set up a device context for drawing
+    for (CanvasObject* object : m_objects) {
+        object->Draw(dc);  // Draw each object in the list
+    }
 }

@@ -33,6 +33,7 @@ private:
     void OnMouseMove(wxMouseEvent& event); 
     void OnMouseClickEnd(wxMouseEvent& event);
 
+
     bool m_isMouseClicked;
     bool m_isDragging;
     bool m_isResizing;
