@@ -1,6 +1,6 @@
 #include "MainFrame.h"
-#include "CanvasPanel.h"
-#include "PropertyPanel.h"
+#include "panels/CanvasPanel.h"
+#include "panels/PropertyPanel.h"
 #include <wx/menu.h>
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)

@@ -3,8 +3,8 @@
 
 #include <wx/wx.h>
 #include <vector>
-#include "CanvasObject.h"
-#include "TextObject.h"
+#include "objects/CanvasObject.h"
+#include "objects/TextObject.h"
 
 // CanvasPanel 클래스 선언
 class CanvasPanel : public wxPanel {

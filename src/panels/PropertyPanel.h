@@ -2,7 +2,7 @@
 #define PROPERTYPANEL_H
 
 #include <wx/wx.h>
-#include "CanvasObject.h"
+#include "objects/CanvasObject.h"
 #include "CanvasPanel.h"
 
 

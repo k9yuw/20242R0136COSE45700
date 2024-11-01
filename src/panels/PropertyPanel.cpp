@@ -1,10 +1,9 @@
 #include "PropertyPanel.h"
-#include "ImageObject.h" 
-#include "TextObject.h" 
-#include "LineObject.h" 
-#include "RectangleObject.h"
-#include "EllipseObject.h" 
-
+#include "objects/ImageObject.h" 
+#include "objects/TextObject.h" 
+#include "objects/LineObject.h" 
+#include "objects/RectangleObject.h"
+#include "objects/EllipseObject.h" 
 
 // 컨트롤 ID 정의
 enum {
