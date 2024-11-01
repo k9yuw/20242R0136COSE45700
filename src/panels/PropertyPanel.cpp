@@ -1,23 +1,13 @@
 #include "PropertyPanel.h"
-#include "objects/ImageObject.h" 
+#include "CanvasPanel.h"
+#include "objects/CanvasObject.h"
 #include "objects/TextObject.h" 
-#include "objects/LineObject.h" 
+#include "objects/ImageObject.h"
+#include "objects/LineObject.h"
 #include "objects/RectangleObject.h"
-#include "objects/EllipseObject.h" 
+#include "objects/EllipseObject.h"
 
-// 컨트롤 ID 정의
-enum {
-    ID_POSITION_X = wxID_HIGHEST + 1,
-    ID_POSITION_Y,
-    ID_WIDTH,
-    ID_HEIGHT,
-    ID_ZORDER,
-    ID_ADD_IMAGE,    
-    ID_ADD_TEXT,       
-    ID_ADD_LINE,        
-    ID_ADD_RECTANGLE,  
-    ID_ADD_ELLIPSE     
-};
+#include <algorithm>
 
 // 이벤트 테이블 설정
 wxBEGIN_EVENT_TABLE(PropertyPanel, wxPanel)
@@ -36,7 +26,7 @@ wxEND_EVENT_TABLE()
 
 // 생성자
 PropertyPanel::PropertyPanel(wxWindow* parent, CanvasPanel* canvasPanel)
-    : wxPanel(parent), m_selectedObject(nullptr), m_canvasPanel(canvasPanel) {
+    : wxPanel(parent), m_canvasPanel(canvasPanel) {
     
     wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL); // 메인 수직 sizer
 
@@ -98,79 +88,148 @@ PropertyPanel::PropertyPanel(wxWindow* parent, CanvasPanel* canvasPanel)
     SetSizer(mainSizer);
 
     // 초기에는 컨트롤들을 비활성화
-    m_positionXCtrl->Enable();
-    m_positionYCtrl->Enable();
+    m_positionXCtrl->Disable();
+    m_positionYCtrl->Disable();
     m_widthCtrl->Disable();
     m_heightCtrl->Disable();
     m_zOrderCtrl->Disable();
 }
 
+// 선택된 객체들을 설정하는 함수
+void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects) {
+    m_selectedObjects = objects;
 
-void PropertyPanel::OnPositionXChanged(wxCommandEvent& event) {
-    if (m_selectedObject) {
-        long x;
-        if (m_positionXCtrl->GetValue().ToLong(&x)) {  // X 좌표 값 컨트롤에서 읽기
-            wxPoint pos = m_selectedObject->GetPosition();
-            pos.x = x;                          // 새 X 좌표 설정
-            m_selectedObject->SetPosition(pos); // CanvasObject에 위치 반영
-            if (m_canvasPanel) {
-                m_canvasPanel->RefreshCanvas();  // 캔버스를 다시 그려서 변경 사항 반영
+    if (!m_selectedObjects.empty()) {
+        // 모든 선택된 객체의 속성이 동일한지 확인 (예: 위치, 크기, ZOrder)
+        bool samePosition = true;
+        bool sameSize = true;
+        bool sameZOrder = true;
+
+        wxPoint firstPos = m_selectedObjects[0]->GetPosition();
+        wxSize firstSize = m_selectedObjects[0]->GetSize();
+        int firstZOrder = m_selectedObjects[0]->GetZOrder();
+
+        for (size_t i = 1; i < m_selectedObjects.size(); ++i) {
+            if (m_selectedObjects[i]->GetPosition() != firstPos) {
+                samePosition = false;
             }
+            if (m_selectedObjects[i]->GetSize() != firstSize) {
+                sameSize = false;
+            }
+            if (m_selectedObjects[i]->GetZOrder() != firstZOrder) {
+                sameZOrder = false;
+            }
+        }
+
+        // 선택된 객체들의 속성을 컨트롤에 표시
+        if (samePosition) {
+            m_positionXCtrl->SetValue(wxString::Format("%d", firstPos.x));
+            m_positionYCtrl->SetValue(wxString::Format("%d", firstPos.y));
+        }
+        else {
+            m_positionXCtrl->SetValue("");
+            m_positionYCtrl->SetValue("");
+        }
+
+        if (sameSize) {
+            m_widthCtrl->SetValue(wxString::Format("%d", firstSize.GetWidth()));
+            m_heightCtrl->SetValue(wxString::Format("%d", firstSize.GetHeight()));
+        }
+        else {
+            m_widthCtrl->SetValue("");
+            m_heightCtrl->SetValue("");
+        }
+
+        if (sameZOrder) {
+            m_zOrderCtrl->SetValue(wxString::Format("%d", firstZOrder));
+        }
+        else {
+            m_zOrderCtrl->SetValue("");
+        }
+
+        // 컨트롤 활성화
+        m_positionXCtrl->Enable();
+        m_positionYCtrl->Enable();
+        m_widthCtrl->Enable();
+        m_heightCtrl->Enable();
+        m_zOrderCtrl->Enable();
+    }
+    else {
+        // 컨트롤 비활성화
+        m_positionXCtrl->Disable();
+        m_positionYCtrl->Disable();
+        m_widthCtrl->Disable();
+        m_heightCtrl->Disable();
+        m_zOrderCtrl->Disable();
+    }
+}
+
+// 이벤트 핸들러 구현 (모든 선택된 객체에 적용)
+void PropertyPanel::OnPositionXChanged(wxCommandEvent& event) {
+    long x;
+    if (m_positionXCtrl->GetValue().ToLong(&x)) {
+        for (auto& obj : m_selectedObjects) {
+            wxPoint pos = obj->GetPosition();
+            pos.x = static_cast<int>(x);
+            obj->SetPosition(pos);
+        }
+        if (m_canvasPanel) {
+            m_canvasPanel->RefreshCanvas();
         }
     }
 }
 
 void PropertyPanel::OnPositionYChanged(wxCommandEvent& event) {
-    if (m_selectedObject) {
-        long y;
-        if (m_positionYCtrl->GetValue().ToLong(&y)) {   // Y 좌표 값 컨트롤에서 읽기
-            wxPoint pos = m_selectedObject->GetPosition();
-            pos.y = y;                                 // 새 Y 좌표 설정
-            m_selectedObject->SetPosition(pos);        // CanvasObject에 위치 반영
-            if (m_canvasPanel) {
-                m_canvasPanel->RefreshCanvas();         // 캔버스 리프레시
-            }
+    long y;
+    if (m_positionYCtrl->GetValue().ToLong(&y)) {
+        for (auto& obj : m_selectedObjects) {
+            wxPoint pos = obj->GetPosition();
+            pos.y = static_cast<int>(y);
+            obj->SetPosition(pos);
+        }
+        if (m_canvasPanel) {
+            m_canvasPanel->RefreshCanvas();
         }
     }
 }
 
 void PropertyPanel::OnWidthChanged(wxCommandEvent& event) {
-    if (m_selectedObject) {
-        long w;
-        if (m_widthCtrl->GetValue().ToLong(&w)) {
-            wxSize size = m_selectedObject->GetSize();
-            size.SetWidth(w);
-            m_selectedObject->SetSize(size);
-            if (m_canvasPanel) {
-                m_canvasPanel->RefreshCanvas();
-            }
+    long w;
+    if (m_widthCtrl->GetValue().ToLong(&w)) {
+        for (auto& obj : m_selectedObjects) {
+            wxSize size = obj->GetSize();
+            size.SetWidth(static_cast<int>(w));
+            obj->SetSize(size);
+        }
+        if (m_canvasPanel) {
+            m_canvasPanel->RefreshCanvas();
         }
     }
 }
 
 void PropertyPanel::OnHeightChanged(wxCommandEvent& event) {
-    if (m_selectedObject) {
-        long h;
-        if (m_heightCtrl->GetValue().ToLong(&h)) {
-            wxSize size = m_selectedObject->GetSize();
-            size.SetHeight(h);
-            m_selectedObject->SetSize(size);
-            if (m_canvasPanel) {
-                m_canvasPanel->RefreshCanvas();
-            }
+    long h;
+    if (m_heightCtrl->GetValue().ToLong(&h)) {
+        for (auto& obj : m_selectedObjects) {
+            wxSize size = obj->GetSize();
+            size.SetHeight(static_cast<int>(h));
+            obj->SetSize(size);
+        }
+        if (m_canvasPanel) {
+            m_canvasPanel->RefreshCanvas();
         }
     }
 }
 
 void PropertyPanel::OnZOrderChanged(wxCommandEvent& event) {
-    if (m_selectedObject) {
-        long zOrder;
-        if (m_zOrderCtrl->GetValue().ToLong(&zOrder)) {
-            m_selectedObject->SetZOrder(static_cast<int>(zOrder));
-            if (m_canvasPanel) {
-                // Z-순서 변경에 따른 객체 리스트 정렬 함수 호출 필요
-                m_canvasPanel->RefreshCanvas();
-            }
+    long zOrder;
+    if (m_zOrderCtrl->GetValue().ToLong(&zOrder)) {
+        for (auto& obj : m_selectedObjects) {
+            obj->SetZOrder(static_cast<int>(zOrder));
+        }
+        if (m_canvasPanel) {
+            // Z-순서 변경에 따른 객체 리스트 정렬 함수 호출 필요
+            m_canvasPanel->RefreshCanvas();
         }
     }
 }
@@ -201,23 +260,21 @@ void PropertyPanel::OnAddImage(wxCommandEvent& event) {
     }
 }
 
-
 // 텍스트 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddText(wxCommandEvent& event) {
     if (m_canvasPanel) {
-        // 임의의 위치와 크기 설정
-        wxPoint position(100, 100); // 기본 위치 (임의로 100, 100으로 설정)
-        int fontSize = 20;           // 기본 글꼴 크기
+        // 임의의 위치과 크기 설정
+        wxPoint position(100, 100); // 기본 위치
+        wxSize size(100, 30);       // 기본 크기
 
         // 텍스트 객체 생성
-        TextObject* text = new TextObject(position, "텍스트", fontSize);
+        TextObject* text = new TextObject(position, size, "텍스트");
 
         // 캔버스에 텍스트 객체 추가
         m_canvasPanel->AddObject(text);
         m_canvasPanel->RefreshCanvas();
     }
 }
-
 
 // 선 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddLine(wxCommandEvent& event) {
