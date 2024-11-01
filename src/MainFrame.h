@@ -14,12 +14,11 @@ private:
     // 이벤트 핸들러 함수
     void OnExit(wxCommandEvent& event);
 
-    // UI 컴포넌트 설정을 위한 멤버 함수들
-    void CreateMenuBar();       // 메뉴 바 생성 
-    void InitStatusBar();       // 상태 표시줄 생성
-    void SetupPanels();         // 패널 설정 (캔버스 & 속성)
-    void SetupCanvasPanel();    // 캔버스 패널 설정
-    void SetupPropertyPanel();  // 속성 패널 설정
+    void CreateMenuBar();    
+    void InitStatusBar();      
+    void SetupPanels();       
+    void SetupCanvasPanel();    
+    void SetupPropertyPanel();  
 
     // 멤버 변수
     CanvasPanel* m_canvasPanel; 

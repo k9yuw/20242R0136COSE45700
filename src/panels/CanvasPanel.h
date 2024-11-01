@@ -32,6 +32,9 @@ public:
     // PropertyPanel 설정 함수
     void SetPropertyPanel(PropertyPanel* propertyPanel);
 
+    // z-order 재정렬 함수
+    void ReorderObjectsByZOrder();
+
 private:
     // 이벤트 핸들러 함수들 선언
     void OnPaint(wxPaintEvent& event);
