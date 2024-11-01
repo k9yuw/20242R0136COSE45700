@@ -229,8 +229,10 @@ void PropertyPanel::OnZOrderChanged(wxCommandEvent& event) {
         for (auto& obj : m_selectedObjects) {
             obj->SetZOrder(static_cast<int>(zOrder));
         }
+        wxLogMessage("PropertyPanel: z값 변경됨. 새 z값: %ld", zOrder);
         if (m_canvasPanel) {
-            // Z-순서 변경에 따른 객체 리스트 정렬 함수 호출 필요
+            // z-order 변경 후, 객체 목록 재정렬
+            m_canvasPanel->ReorderObjectsByZOrder();
             m_canvasPanel->RefreshCanvas();
         }
     }

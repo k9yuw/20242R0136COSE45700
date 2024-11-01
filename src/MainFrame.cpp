@@ -42,7 +42,6 @@ void MainFrame::SetupPanels() {
 
     // CanvasPanel에 PropertyPanel 설정
     m_canvasPanel->SetPropertyPanel(m_propertyPanel);
-    wxLogMessage("PropertyPanel has been set in CanvasPanel.");
 
     // 수평 방향으로 두 패널을 배치하기 위한 Sizer 생성
     wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);

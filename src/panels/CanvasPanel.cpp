@@ -43,8 +43,17 @@ void CanvasPanel::SetPropertyPanel(PropertyPanel* propertyPanel) {
 // 객체 추가
 void CanvasPanel::AddObject(CanvasObject* object) {
     m_objects.push_back(object); 
+    ReorderObjectsByZOrder();
     Refresh();
     Update();                  
+}
+
+// z-order 재정렬 함수
+void CanvasPanel::ReorderObjectsByZOrder() {
+    std::sort(m_objects.begin(), m_objects.end(), 
+        [](const CanvasObject* a, const CanvasObject* b) -> bool {
+            return a->GetZOrder() < b->GetZOrder();
+        });
 }
 
 // 선택된 객체들을 반환
@@ -196,7 +205,6 @@ void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
         // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
         if (m_selectedObjects.size() == 1 && m_propertyPanel) {
             m_propertyPanel->SetSelectedObjects(m_selectedObjects);
-            wxLogMessage("PropertyPanel이 성공적으로 갱신됨.");
         }
 
         Refresh();  
@@ -219,7 +227,6 @@ void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
         // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
         if (m_selectedObjects.size() == 1 && m_propertyPanel) {
             m_propertyPanel->SetSelectedObjects(m_selectedObjects);
-            wxLogMessage("PropertyPanel이 성공적으로 갱신됨.");
         }
 
         Refresh();  
