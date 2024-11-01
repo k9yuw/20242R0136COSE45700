@@ -2,7 +2,7 @@
 #define PROPERTYPANEL_H
 
 #include <wx/wx.h>
-#include "objects/CanvasObject.h"
+#include "CanvasPanel.h"
 #include <vector>
 
 // Forward declaration
@@ -22,6 +22,7 @@ private:
     void OnHeightChanged(wxCommandEvent& event);
     void OnZOrderChanged(wxCommandEvent& event);
 
+    // Add object buttons
     void OnAddImage(wxCommandEvent& event);
     void OnAddText(wxCommandEvent& event);
     void OnAddLine(wxCommandEvent& event);
@@ -39,6 +40,9 @@ private:
     wxTextCtrl* m_widthCtrl;
     wxTextCtrl* m_heightCtrl;
     wxTextCtrl* m_zOrderCtrl;
+
+    // 이벤트 핸들러 재진입 방지 플래그
+    bool m_ignoreEvents;
 };
 
 // 이벤트 ID 정의
@@ -55,4 +59,4 @@ enum {
     ID_ADD_ELLIPSE     
 };
 
-#endif
+#endif // PROPERTYPANEL_H

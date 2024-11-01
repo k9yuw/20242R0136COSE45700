@@ -1,3 +1,4 @@
+// PropertyPanel.cpp
 #include "PropertyPanel.h"
 #include "CanvasPanel.h"
 #include "objects/CanvasObject.h"
@@ -26,7 +27,7 @@ wxEND_EVENT_TABLE()
 
 // 생성자
 PropertyPanel::PropertyPanel(wxWindow* parent, CanvasPanel* canvasPanel)
-    : wxPanel(parent), m_canvasPanel(canvasPanel) {
+    : wxPanel(parent), m_canvasPanel(canvasPanel), m_ignoreEvents(false) {
     
     wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL); // 메인 수직 sizer
 
@@ -97,75 +98,68 @@ PropertyPanel::PropertyPanel(wxWindow* parent, CanvasPanel* canvasPanel)
 
 // 선택된 객체들을 설정하는 함수
 void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects) {
+    m_ignoreEvents = true;  // 이벤트 핸들러 재진입 방지
     m_selectedObjects = objects;
 
-    if (!m_selectedObjects.empty()) {
-        // 모든 선택된 객체의 속성이 동일한지 확인 (예: 위치, 크기, ZOrder)
-        bool samePosition = true;
-        bool sameSize = true;
-        bool sameZOrder = true;
-
-        wxPoint firstPos = m_selectedObjects[0]->GetPosition();
-        wxSize firstSize = m_selectedObjects[0]->GetSize();
-        int firstZOrder = m_selectedObjects[0]->GetZOrder();
-
-        for (size_t i = 1; i < m_selectedObjects.size(); ++i) {
-            if (m_selectedObjects[i]->GetPosition() != firstPos) {
-                samePosition = false;
-            }
-            if (m_selectedObjects[i]->GetSize() != firstSize) {
-                sameSize = false;
-            }
-            if (m_selectedObjects[i]->GetZOrder() != firstZOrder) {
-                sameZOrder = false;
-            }
-        }
-
-        // 선택된 객체들의 속성을 컨트롤에 표시
-        if (samePosition) {
-            m_positionXCtrl->SetValue(wxString::Format("%d", firstPos.x));
-            m_positionYCtrl->SetValue(wxString::Format("%d", firstPos.y));
-        }
-        else {
-            m_positionXCtrl->SetValue("");
-            m_positionYCtrl->SetValue("");
-        }
-
-        if (sameSize) {
-            m_widthCtrl->SetValue(wxString::Format("%d", firstSize.GetWidth()));
-            m_heightCtrl->SetValue(wxString::Format("%d", firstSize.GetHeight()));
-        }
-        else {
-            m_widthCtrl->SetValue("");
-            m_heightCtrl->SetValue("");
-        }
-
-        if (sameZOrder) {
-            m_zOrderCtrl->SetValue(wxString::Format("%d", firstZOrder));
-        }
-        else {
-            m_zOrderCtrl->SetValue("");
-        }
-
-        // 컨트롤 활성화
-        m_positionXCtrl->Enable();
-        m_positionYCtrl->Enable();
-        m_widthCtrl->Enable();
-        m_heightCtrl->Enable();
-        m_zOrderCtrl->Enable();
-    }
-    else {
-        // 컨트롤 비활성화
+    if (m_selectedObjects.empty()) {
+        // 선택된 객체가 없으면 모든 컨트롤 비활성화
         m_positionXCtrl->Disable();
         m_positionYCtrl->Disable();
         m_widthCtrl->Disable();
         m_heightCtrl->Disable();
         m_zOrderCtrl->Disable();
+
+        // 컨트롤 내용 초기화
+        m_positionXCtrl->SetValue("");
+        m_positionYCtrl->SetValue("");
+        m_widthCtrl->SetValue("");
+        m_heightCtrl->SetValue("");
+        m_zOrderCtrl->SetValue("");
+
+        m_ignoreEvents = false;
+        Layout();  // 레이아웃 갱신
+        Refresh();  // 화면 갱신
+        return;
     }
+
+    // 컨트롤 활성화
+    m_positionXCtrl->Enable();
+    m_positionYCtrl->Enable();
+    m_widthCtrl->Enable();
+    m_heightCtrl->Enable();
+    m_zOrderCtrl->Enable();
+
+    if (m_selectedObjects.size() == 1) {
+        // 객체가 하나만 선택된 경우 해당 객체의 속성을 표시
+        CanvasObject* obj = m_selectedObjects[0];
+
+        wxPoint pos = obj->GetPosition();
+        wxSize size = obj->GetSize();
+        int zOrder = obj->GetZOrder();
+
+        m_positionXCtrl->SetValue(wxString::Format("%d", pos.x));
+        m_positionYCtrl->SetValue(wxString::Format("%d", pos.y));
+        m_widthCtrl->SetValue(wxString::Format("%d", size.GetWidth()));
+        m_heightCtrl->SetValue(wxString::Format("%d", size.GetHeight()));
+        m_zOrderCtrl->SetValue(wxString::Format("%d", zOrder));
+    } else {
+        // 다중 선택된 경우 속성 값을 공백으로 설정
+        m_positionXCtrl->SetValue("");
+        m_positionYCtrl->SetValue("");
+        m_widthCtrl->SetValue("");
+        m_heightCtrl->SetValue("");
+        m_zOrderCtrl->SetValue("");
+    }
+
+    m_ignoreEvents = false;
+    Layout();  // 레이아웃 갱신
+    Refresh();  // 화면 갱신
 }
 
 // 이벤트 핸들러 구현 (모든 선택된 객체에 적용)
 void PropertyPanel::OnPositionXChanged(wxCommandEvent& event) {
+    if (m_ignoreEvents) return;  // 이벤트 핸들러 재진입 방지
+
     long x;
     if (m_positionXCtrl->GetValue().ToLong(&x)) {
         for (auto& obj : m_selectedObjects) {
@@ -180,6 +174,8 @@ void PropertyPanel::OnPositionXChanged(wxCommandEvent& event) {
 }
 
 void PropertyPanel::OnPositionYChanged(wxCommandEvent& event) {
+    if (m_ignoreEvents) return;
+
     long y;
     if (m_positionYCtrl->GetValue().ToLong(&y)) {
         for (auto& obj : m_selectedObjects) {
@@ -194,6 +190,8 @@ void PropertyPanel::OnPositionYChanged(wxCommandEvent& event) {
 }
 
 void PropertyPanel::OnWidthChanged(wxCommandEvent& event) {
+    if (m_ignoreEvents) return;
+
     long w;
     if (m_widthCtrl->GetValue().ToLong(&w)) {
         for (auto& obj : m_selectedObjects) {
@@ -208,6 +206,8 @@ void PropertyPanel::OnWidthChanged(wxCommandEvent& event) {
 }
 
 void PropertyPanel::OnHeightChanged(wxCommandEvent& event) {
+    if (m_ignoreEvents) return;
+
     long h;
     if (m_heightCtrl->GetValue().ToLong(&h)) {
         for (auto& obj : m_selectedObjects) {
@@ -222,6 +222,8 @@ void PropertyPanel::OnHeightChanged(wxCommandEvent& event) {
 }
 
 void PropertyPanel::OnZOrderChanged(wxCommandEvent& event) {
+    if (m_ignoreEvents) return;
+
     long zOrder;
     if (m_zOrderCtrl->GetValue().ToLong(&zOrder)) {
         for (auto& obj : m_selectedObjects) {

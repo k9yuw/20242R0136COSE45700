@@ -1,9 +1,11 @@
+// CanvasPanel.cpp
 #include "CanvasPanel.h"
 #include "PropertyPanel.h"
 #include "objects/CanvasObject.h"
 #include "objects/TextObject.h" 
-#include <algorithm> 
+#include <algorithm>
 
+// 이벤트 테이블 설정
 wxBEGIN_EVENT_TABLE(CanvasPanel, wxPanel)
     EVT_LEFT_DOWN(CanvasPanel::OnMouseClickStart)  // 마우스 왼쪽 버튼 눌림
     EVT_MOTION(CanvasPanel::OnMouseMove)           // 마우스 이동 (이동 또는 크기 조정)
@@ -62,7 +64,10 @@ void CanvasPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects) 
 
     // PropertyPanel에 선택된 객체 전달
     if (m_propertyPanel) {
+        wxLogMessage("Setting selected objects in PropertyPanel.");
         m_propertyPanel->SetSelectedObjects(m_selectedObjects);
+    } else {
+        wxLogMessage("PropertyPanel is not set in CanvasPanel.");
     }
 
     Refresh();
@@ -169,7 +174,6 @@ void CanvasPanel::OnMouseClickStart(wxMouseEvent& event) {
     Refresh(); 
 }
 
-
 // 마우스가 움직일 때 호출되는 함수 (이동 또는 크기 조정)
 void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
     wxPoint currentPos = event.GetPosition();
@@ -248,8 +252,11 @@ void CanvasPanel::OnMouseClickEnd(wxMouseEvent& event) {
         for (auto& obj : m_objects) {
             wxRect objRect(obj->GetPosition(), obj->GetSize());
             if (selectionRect.Intersects(objRect)) {
-                m_selectedObjects.push_back(obj);
-                m_originalPositions.push_back(obj->GetPosition());
+                // 중복 선택 방지
+                if (std::find(m_selectedObjects.begin(), m_selectedObjects.end(), obj) == m_selectedObjects.end()) {
+                    m_selectedObjects.push_back(obj);
+                    m_originalPositions.push_back(obj->GetPosition());
+                }
             }
         }
 
