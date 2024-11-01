@@ -1,6 +1,6 @@
 #include "MainFrame.h"
-#include "CanvasPanel.h"
-#include "PropertyPanel.h"
+#include "panels/CanvasPanel.h"
+#include "panels/PropertyPanel.h"
 #include <wx/menu.h>
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
@@ -33,7 +33,7 @@ void MainFrame::InitStatusBar() {
 void MainFrame::SetupPanels() {
     // CanvasPanel과 PropertyPanel 생성
     m_canvasPanel = new CanvasPanel(this);
-    m_propertyPanel = new PropertyPanel(this);
+    m_propertyPanel = new PropertyPanel(this, m_canvasPanel);
 
     // 수평 방향으로 두 패널을 배치하기 위한 Sizer 생성
     wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);

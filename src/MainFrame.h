@@ -2,8 +2,8 @@
 #define MAINFRAME_H
 
 #include <wx/wx.h>
-#include "CanvasPanel.h" 
-#include "PropertyPanel.h"
+#include "panels/CanvasPanel.h"
+#include "panels/PropertyPanel.h"
 
 class MainFrame : public wxFrame {
 public:

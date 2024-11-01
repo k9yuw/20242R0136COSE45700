@@ -3,7 +3,8 @@
 
 #include <wx/wx.h>
 #include <vector>
-#include "CanvasObject.h"
+#include "objects/CanvasObject.h"
+#include "objects/TextObject.h"
 
 // CanvasPanel 클래스 선언
 class CanvasPanel : public wxPanel {
@@ -32,6 +33,9 @@ private:
     void OnMouseClickStart(wxMouseEvent& event);
     void OnMouseMove(wxMouseEvent& event); 
     void OnMouseClickEnd(wxMouseEvent& event);
+    void OnEditText(wxMouseEvent& event);
+    void OnLeftDClick(wxMouseEvent& event);
+
 
     bool m_isMouseClicked;
     bool m_isDragging;
@@ -43,7 +47,8 @@ private:
     // 선택된 객체를 가리키는 포인터
     CanvasObject* m_selectedObject;
 
-    wxPoint m_mouseLastPoint;
+    wxPoint m_resizeStartPos; // 리사이징 시작 시 마우스 위치
+    wxPoint m_mouseLastPosition;
     wxPoint m_dragStartPos;
     wxPoint m_originalPosition;
     wxSize m_originalSize;
