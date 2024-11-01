@@ -1,5 +1,11 @@
 #include "PropertyPanel.h"
+#include "ImageObject.h" 
 #include "TextObject.h" 
+#include "LineObject.h" 
+#include "RectangleObject.h"
+#include "EllipseObject.h" 
+
+
 // 컨트롤 ID 정의
 enum {
     ID_POSITION_X = wxID_HIGHEST + 1,
@@ -172,42 +178,80 @@ void PropertyPanel::OnZOrderChanged(wxCommandEvent& event) {
 
 // 이미지 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddImage(wxCommandEvent& event) {
-
-}
-
-// 텍스트 추가 버튼 클릭 시 호출
-void PropertyPanel::OnAddText(wxCommandEvent& event) {
-    // Enable the x and y input fields when the button is clicked
-
-
-    // Optionally set focus to the x coordinate input for a better user experience
-    m_positionXCtrl->SetFocus();
-
-    // Read the x and y values immediately after enabling them
-    long x = 0, y = 0;
-    m_positionXCtrl->GetValue().ToLong(&x);  // x 값 읽기
-    m_positionYCtrl->GetValue().ToLong(&y);  // y 값 읽기
-    // Create and add the TextObject to the canvas
     if (m_canvasPanel) {
-        wxPoint position(x, y);
-        TextObject* text = new TextObject(position, "Sample Text", 20);
-        m_canvasPanel->AddObject(text);
-        m_canvasPanel->RefreshCanvas();
+        // 이미지 파일 선택 대화상자 열기
+        wxFileDialog openFileDialog(this, _("이미지 파일 선택"), "", "",
+            "이미지 파일 (*.png;*.jpg;*.bmp)|*.png;*.jpg;*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
+        if (openFileDialog.ShowModal() == wxID_CANCEL)
+            return;
+
+        // 이미지 로드
+        wxImage image;
+        if (!image.LoadFile(openFileDialog.GetPath()))
+            return;
+
+        wxBitmap bitmap(image);
+
+        // 이미지 객체 생성
+        ImageObject* imageObject = new ImageObject(wxPoint(50, 50), bitmap.GetSize(), bitmap);
+
+        // 캔버스에 추가
+        m_canvasPanel->AddObject(imageObject);
+        m_canvasPanel->RefreshCanvas();
     }
 }
 
+
+// 텍스트 추가 버튼 클릭 시 호출
+void PropertyPanel::OnAddText(wxCommandEvent& event) {
+    if (m_canvasPanel) {
+        // 임의의 위치와 크기 설정
+        wxPoint position(100, 100); // 기본 위치 (임의로 100, 100으로 설정)
+        int fontSize = 20;           // 기본 글꼴 크기
+
+        // 텍스트 객체 생성
+        TextObject* text = new TextObject(position, "텍스트", fontSize);
+
+        // 캔버스에 텍스트 객체 추가
+        m_canvasPanel->AddObject(text);
+        m_canvasPanel->RefreshCanvas();
+    }
+}
+
+
 // 선 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddLine(wxCommandEvent& event) {
+    if (m_canvasPanel) {
+        // 선 객체 생성
+        LineObject* line = new LineObject(wxPoint(50, 50), wxPoint(150, 150));
 
+        // 캔버스에 추가
+        m_canvasPanel->AddObject(line);
+        m_canvasPanel->RefreshCanvas();
+    }
 }
 
 // 사각형 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddRectangle(wxCommandEvent& event) { 
+    if (m_canvasPanel) {
+        // 사각형 객체 생성
+        RectangleObject* rect = new RectangleObject(wxPoint(100, 100), wxSize(100, 50));
 
+        // 캔버스에 추가
+        m_canvasPanel->AddObject(rect);
+        m_canvasPanel->RefreshCanvas();
+    }
 }
 
 // 타원 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddEllipse(wxCommandEvent& event) {
+    if (m_canvasPanel) {
+        // 타원 객체 생성
+        EllipseObject* ellipse = new EllipseObject(wxPoint(200, 200), wxSize(80, 80));
 
+        // 캔버스에 추가
+        m_canvasPanel->AddObject(ellipse);
+        m_canvasPanel->RefreshCanvas();
+    }
 }

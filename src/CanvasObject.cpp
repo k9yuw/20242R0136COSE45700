@@ -52,9 +52,12 @@ void CanvasObject::SetOnChangeCallback(std::function<void()> callback) {
     m_onChangeCallback = callback;  // 외부에서 콜백 등록
 }
 
-// 마우스가 객체의 오른쪽 하단 모서리 근처에 있는지 확인: 크기조절 시 사용
+// 마우스가 객체의 네 변 중 하나 근처에 있는지 확인: 크기조절 시 사용
 bool CanvasObject::isMouseNearEdge(const wxPoint& point, int margin) const {
-    wxRect rect(m_position, m_size);  
-    return (abs(point.x - (m_position.x + m_size.GetWidth())) <= margin &&
-            abs(point.y - (m_position.y + m_size.GetHeight())) <= margin);
+    // 영역을 margin만큼 확장한 사각형 생성
+    wxRect inflatedRect = wxRect(m_position, m_size);
+    inflatedRect.Inflate(margin, margin);
+
+    // 확장된 사각형에는 포함되지만 원래 사각형에는 포함되지 않으면 가장자리 근처에 마우스가 위치
+    return inflatedRect.Contains(point) && !wxRect(m_position, m_size).Contains(point);
 }
