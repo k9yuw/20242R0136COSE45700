@@ -117,8 +117,8 @@ void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects
         m_zOrderCtrl->SetValue("");
 
         m_ignoreEvents = false;
-        Layout();  // 레이아웃 갱신
-        Refresh();  // 화면 갱신
+        Layout();  
+        Refresh();  
         return;
     }
 
@@ -152,8 +152,8 @@ void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects
     }
 
     m_ignoreEvents = false;
-    Layout();  // 레이아웃 갱신
-    Refresh();  // 화면 갱신
+    Layout();  
+    Refresh(); 
 }
 
 // 이벤트 핸들러 구현 (모든 선택된 객체에 적용)

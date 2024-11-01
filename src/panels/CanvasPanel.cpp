@@ -193,6 +193,12 @@ void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
             m_selectedObjects[i]->SetPosition(newPosition);
         }
 
+        // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
+        if (m_selectedObjects.size() == 1 && m_propertyPanel) {
+            m_propertyPanel->SetSelectedObjects(m_selectedObjects);
+            wxLogMessage("PropertyPanel이 성공적으로 갱신됨.");
+        }
+
         Refresh();  
     }
 
@@ -209,6 +215,13 @@ void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
         for (auto& obj : m_selectedObjects) {
             obj->SetSize(newSize);
         }
+
+        // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
+        if (m_selectedObjects.size() == 1 && m_propertyPanel) {
+            m_propertyPanel->SetSelectedObjects(m_selectedObjects);
+            wxLogMessage("PropertyPanel이 성공적으로 갱신됨.");
+        }
+
         Refresh();  
     }
 
