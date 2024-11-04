@@ -17,6 +17,7 @@ wxBEGIN_EVENT_TABLE(PropertyPanel, wxPanel)
     EVT_TEXT(ID_WIDTH, PropertyPanel::OnWidthChanged)
     EVT_TEXT(ID_HEIGHT, PropertyPanel::OnHeightChanged)
     EVT_TEXT(ID_ZORDER, PropertyPanel::OnZOrderChanged)
+    EVT_TEXT(ID_FONT_SIZE, PropertyPanel::OnFontSizeChanged)
 
     EVT_BUTTON(ID_ADD_IMAGE, PropertyPanel::OnAddImage)
     EVT_BUTTON(ID_ADD_TEXT, PropertyPanel::OnAddText)
@@ -54,6 +55,9 @@ PropertyPanel::PropertyPanel(wxWindow* parent, CanvasPanel* canvasPanel)
     wxStaticText* zOrderLabel = new wxStaticText(this, wxID_ANY, "z값:");
     m_zOrderCtrl = new wxTextCtrl(this, ID_ZORDER, "", wxDefaultPosition, wxSize(80, -1));
 
+    wxStaticText* fontSizeLabel = new wxStaticText(this, wxID_ANY, "글꼴 크기:");
+    m_fontSizeCtrl = new wxTextCtrl(this, ID_FONT_SIZE, "", wxDefaultPosition, wxSize(80, -1));
+
     // GridSizer에 라벨과 컨트롤을 추가
     gridSizer->Add(posXLabel, 0, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
     gridSizer->Add(m_positionXCtrl, 0, wxALL | wxEXPAND, 5);
@@ -69,6 +73,9 @@ PropertyPanel::PropertyPanel(wxWindow* parent, CanvasPanel* canvasPanel)
 
     gridSizer->Add(zOrderLabel, 0, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
     gridSizer->Add(m_zOrderCtrl, 0, wxALL | wxEXPAND, 5);
+
+    gridSizer->Add(fontSizeLabel, 0, wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
+    gridSizer->Add(m_fontSizeCtrl, 0, wxALL | wxEXPAND, 5);
 
     // 객체 추가 버튼 생성
     wxButton* addImageButton = new wxButton(this, ID_ADD_IMAGE, "이미지 추가");
@@ -94,6 +101,7 @@ PropertyPanel::PropertyPanel(wxWindow* parent, CanvasPanel* canvasPanel)
     m_widthCtrl->Disable();
     m_heightCtrl->Disable();
     m_zOrderCtrl->Disable();
+    m_fontSizeCtrl->Disable();
 }
 
 // 선택된 객체들을 설정하는 함수
@@ -108,6 +116,7 @@ void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects
         m_widthCtrl->Disable();
         m_heightCtrl->Disable();
         m_zOrderCtrl->Disable();
+        m_fontSizeCtrl->Disable();
 
         // 컨트롤 내용 초기화
         m_positionXCtrl->SetValue("");
@@ -115,6 +124,7 @@ void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects
         m_widthCtrl->SetValue("");
         m_heightCtrl->SetValue("");
         m_zOrderCtrl->SetValue("");
+        m_fontSizeCtrl->SetValue("");
 
         m_ignoreEvents = false;
         Layout();  
@@ -128,6 +138,7 @@ void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects
     m_widthCtrl->Enable();
     m_heightCtrl->Enable();
     m_zOrderCtrl->Enable();
+    m_fontSizeCtrl->Enable();
 
     if (m_selectedObjects.size() == 1) {
         // 객체가 하나만 선택된 경우 해당 객체의 속성을 표시
@@ -142,13 +153,27 @@ void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects
         m_widthCtrl->SetValue(wxString::Format("%d", size.GetWidth()));
         m_heightCtrl->SetValue(wxString::Format("%d", size.GetHeight()));
         m_zOrderCtrl->SetValue(wxString::Format("%d", zOrder));
-    } else {
+
+        // TextObject인 경우 폰트 크기 설정
+        TextObject* textObj = dynamic_cast<TextObject*>(obj);
+        if (textObj) {
+            m_fontSizeCtrl->Enable();
+            m_fontSizeCtrl->SetValue(wxString::Format("%d", textObj->GetFontSize()));
+        }
+        else {
+            m_fontSizeCtrl->Disable();
+            m_fontSizeCtrl->SetValue("");
+        }
+    } 
+    else {
         // 다중 선택된 경우 속성 값을 공백으로 설정
         m_positionXCtrl->SetValue("");
         m_positionYCtrl->SetValue("");
         m_widthCtrl->SetValue("");
         m_heightCtrl->SetValue("");
         m_zOrderCtrl->SetValue("");
+        m_fontSizeCtrl->SetValue("");
+        m_fontSizeCtrl->Disable();
     }
 
     m_ignoreEvents = false;
@@ -156,7 +181,6 @@ void PropertyPanel::SetSelectedObjects(const std::vector<CanvasObject*>& objects
     Refresh(); 
 }
 
-// 이벤트 핸들러 구현 (모든 선택된 객체에 적용)
 void PropertyPanel::OnPositionXChanged(wxCommandEvent& event) {
     if (m_ignoreEvents) return;  // 이벤트 핸들러 재진입 방지
 
@@ -231,8 +255,25 @@ void PropertyPanel::OnZOrderChanged(wxCommandEvent& event) {
         }
         wxLogMessage("PropertyPanel: z값 변경됨. 새 z값: %ld", zOrder);
         if (m_canvasPanel) {
-            // z-order 변경 후, 객체 목록 재정렬
+            // z-order 변경 후 객체 목록 재정렬
             m_canvasPanel->ReorderObjectsByZOrder();
+            m_canvasPanel->RefreshCanvas();
+        }
+    }
+}
+
+void PropertyPanel::OnFontSizeChanged(wxCommandEvent& event) {
+    if (m_ignoreEvents) return;
+
+    long newFontSize;
+    if (m_fontSizeCtrl->GetValue().ToLong(&newFontSize)) {
+        for (auto& obj : m_selectedObjects) {
+            TextObject* textObj = dynamic_cast<TextObject*>(obj);
+            if (textObj) {
+                textObj->SetFontSize(static_cast<int>(newFontSize));
+            }
+        }
+        if (m_canvasPanel) {
             m_canvasPanel->RefreshCanvas();
         }
     }

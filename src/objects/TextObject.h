@@ -21,4 +21,4 @@ private:
     int fontSize;
 };
 
-#endif // TEXTOBJECT_H
+#endif 
