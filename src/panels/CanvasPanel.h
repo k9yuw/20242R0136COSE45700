@@ -35,6 +35,8 @@ public:
     // z-order 재정렬 함수
     void ReorderObjectsByZOrder();
 
+    bool m_resizingStartPoint; // true이면 시작점을 리사이징, false이면 끝점을 리사이징
+
 private:
     // 이벤트 핸들러 함수들 선언
     void OnPaint(wxPaintEvent& event);
@@ -58,7 +60,7 @@ private:
     std::vector<CanvasObject*> m_selectedObjects; // 선택된 객체를 가리키는 벡터
     std::vector<wxPoint> m_originalPositions; // 선택된 객체들의 원래 위치
 
-// 리사이징 관련 변수
+    // 리사이징 관련 변수
     wxPoint m_resizeStartPos; // 리사이징 시작 시 마우스 위치
     wxPoint m_mouseLastPosition;
     wxPoint m_dragStartPos;

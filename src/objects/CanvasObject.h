@@ -18,10 +18,10 @@ public:
 
     // Getter, Setter
     wxPoint GetPosition() const;
-    void SetPosition(const wxPoint& position);
+    virtual void SetPosition(const wxPoint& position);
 
     wxSize GetSize() const;
-    void SetSize(const wxSize& size);
+    virtual void SetSize(const wxSize& size);
 
     int GetZOrder() const;
     void SetZOrder(int zOrder);

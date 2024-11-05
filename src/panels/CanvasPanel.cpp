@@ -3,6 +3,7 @@
 #include "PropertyPanel.h"
 #include "objects/CanvasObject.h"
 #include "objects/TextObject.h" 
+#include "objects/LineObject.h" 
 #include <algorithm>
 
 // 이벤트 테이블 설정
@@ -21,6 +22,7 @@ CanvasPanel::CanvasPanel(wxWindow* parentWindow)
       m_isDragging(false), 
       m_isResizing(false), 
       m_isSelecting(false), 
+      m_resizingStartPoint(false), // 초기값 설정
       m_propertyPanel(nullptr) {
     // 캔버스 초기화
     SetBackgroundColour(*wxWHITE);
@@ -97,7 +99,7 @@ void CanvasPanel::OnMouseClickStart(wxMouseEvent& event) {
 
     // 객체를 역순으로 탐색하여 최상위 객체부터 선택
     for (auto it = m_objects.rbegin(); it != m_objects.rend(); ++it) {
-        if ((*it)->isMouseNearEdge(pos, 20)) { 
+        if ((*it)->isMouseNearEdge(pos, 10)) { 
             bool isSelected = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), *it) != m_selectedObjects.end();
 
             if (!isCtrlDown && !isSelected) {
@@ -111,8 +113,19 @@ void CanvasPanel::OnMouseClickStart(wxMouseEvent& event) {
                 m_originalPositions.push_back((*it)->GetPosition());
             }
 
+            LineObject* lineObj = dynamic_cast<LineObject*>(*it);
+            if (lineObj) {
+                wxRect startRect(lineObj->GetPosition() - wxPoint(5, 5), wxSize(10, 10));
+                wxRect endRect(lineObj->GetEndPoint() - wxPoint(5, 5), wxSize(10, 10));
+
+                if (startRect.Contains(pos)) {
+                    m_resizingStartPoint = true;
+                } else if (endRect.Contains(pos)) {
+                    m_resizingStartPoint = false;
+                }
+            }
+
             m_isResizing = true; 
-            m_originalSize = (*it)->GetSize();
             m_resizeStartPos = pos;
 
             // PropertyPanel에 선택된 객체 전달
@@ -212,16 +225,26 @@ void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
 
     // 크기 변경 처리
     if (m_isResizing && !m_selectedObjects.empty()) {
-        wxPoint delta = currentPos - m_resizeStartPos;
-        wxSize newSize = m_originalSize;
-        newSize.SetWidth(m_originalSize.GetWidth() + delta.x);
-        newSize.SetHeight(m_originalSize.GetHeight() + delta.y);
-
-        if (newSize.GetWidth() < 10) newSize.SetWidth(10);
-        if (newSize.GetHeight() < 10) newSize.SetHeight(10);
-
         for (auto& obj : m_selectedObjects) {
-            obj->SetSize(newSize);
+            LineObject* lineObj = dynamic_cast<LineObject*>(obj);
+            if (lineObj) {
+                if (m_resizingStartPoint) {
+                    lineObj->SetStartPoint(currentPos);
+                } else {
+                    lineObj->SetEndPoint(currentPos);
+                }
+            } else {
+                // 다른 객체의 크기 조정 처리 (기존 코드 유지)
+                wxPoint delta = currentPos - m_resizeStartPos;
+                wxSize newSize = m_originalSize;
+                newSize.SetWidth(m_originalSize.GetWidth() + delta.x);
+                newSize.SetHeight(m_originalSize.GetHeight() + delta.y);
+
+                if (newSize.GetWidth() < 10) newSize.SetWidth(10);
+                if (newSize.GetHeight() < 10) newSize.SetHeight(10);
+
+                obj->SetSize(newSize);
+            }
         }
 
         // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
@@ -236,8 +259,8 @@ void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
     if (!m_isResizing && !m_isDragging && !m_isSelecting) {
         bool onEdge = false;
         for (auto it = m_objects.rbegin(); it != m_objects.rend(); ++it) {
-            if ((*it)->isMouseNearEdge(currentPos, 20)) { 
-                SetCursor(wxCURSOR_SIZENWSE);
+            if ((*it)->isMouseNearEdge(currentPos, 10)) { 
+                SetCursor(wxCURSOR_CROSS); // 리사이징 가능하다는 것을 나타내는 커서
                 onEdge = true;
                 break;
             }
@@ -298,13 +321,27 @@ void CanvasPanel::OnPaint(wxPaintEvent& event) {
 
     // 선택된 객체에 테두리 그리기
     for (CanvasObject* obj : m_selectedObjects) {
-        wxRect rect(obj->GetPosition(), obj->GetSize());
-        wxRect paddingRect = rect;
-        paddingRect.Inflate(5, 5); // 간격을 두기 위해 인플레이트
+        LineObject* lineObj = dynamic_cast<LineObject*>(obj);
+        if (lineObj) {
+            // 선 객체의 경우 시작점과 끝점에 작은 사각형 그리기
+            dc.SetPen(wxPen(wxColour(0, 120, 215), 1));
+            dc.SetBrush(wxBrush(wxColour(0, 120, 215)));
 
-        dc.SetPen(wxPen(wxColour(200, 200, 200), 1, wxPENSTYLE_SOLID));
-        dc.SetBrush(*wxTRANSPARENT_BRUSH);
-        dc.DrawRectangle(paddingRect);
+            wxRect startHandle(lineObj->GetPosition() - wxPoint(5, 5), wxSize(10, 10));
+            wxRect endHandle(lineObj->GetEndPoint() - wxPoint(5, 5), wxSize(10, 10));
+
+            dc.DrawRectangle(startHandle);
+            dc.DrawRectangle(endHandle);
+        } else {
+            // 다른 객체에 대한 테두리 그리기
+            wxRect rect(obj->GetPosition(), obj->GetSize());
+            wxRect paddingRect = rect;
+            paddingRect.Inflate(5, 5); // 간격을 두기 위해 인플레이트
+
+            dc.SetPen(wxPen(wxColour(200, 200, 200), 1, wxPENSTYLE_SOLID));
+            dc.SetBrush(*wxTRANSPARENT_BRUSH);
+            dc.DrawRectangle(paddingRect);
+        }
     }
 
     // 선택 영역 드래그 중인 경우 선택 영역 그리기
