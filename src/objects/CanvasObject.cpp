@@ -61,3 +61,4 @@ bool CanvasObject::isMouseNearEdge(const wxPoint& point, int margin) const {
     // 확장된 사각형에는 포함되지만 원래 사각형에는 포함되지 않으면 가장자리 근처에 마우스가 위치
     return inflatedRect.Contains(point) && !wxRect(m_position, m_size).Contains(point);
 }
+

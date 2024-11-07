@@ -22,8 +22,9 @@ CanvasPanel::CanvasPanel(wxWindow* parentWindow)
       m_isDragging(false), 
       m_isResizing(false), 
       m_isSelecting(false), 
-      m_resizingStartPoint(false), // 초기값 설정
+      m_resizingStartPoint(false), // 초기값 
       m_propertyPanel(nullptr) {
+    
     // 캔버스 초기화
     SetBackgroundColour(*wxWHITE);
     SetMinSize(wxSize(400, 300));
@@ -97,89 +98,104 @@ void CanvasPanel::OnMouseClickStart(wxMouseEvent& event) {
     wxPoint pos = event.GetPosition();  
     bool isCtrlDown = event.CmdDown(); // Mac에서는 Cmd, Windows에서는 Ctrl
 
-    // 객체를 역순으로 탐색하여 최상위 객체부터 선택
+    // 클릭된 객체 찾기
+    CanvasObject* clickedObj = GetTopMostObjectAtPosition(pos);
+
+    // 1. 객체가 존재할 때
+    if (clickedObj) {
+        // 1-1. 가장자리 클릭한 경우: 리사이징 모드
+        if (clickedObj->isMouseNearEdge(pos, 10)) {
+            HandleEdgeClick(clickedObj, pos, isCtrlDown);
+            return;
+        }
+
+        // 1-2. 내부를 클릭한 경우
+        HandleObjectClick(clickedObj, pos, isCtrlDown);
+        return;
+    }
+
+    // 2. 빈공간을 클릭한 경우
+    HandleEmptySpaceClick(pos, isCtrlDown);
+}
+
+// 클릭된 위치에서 최상위 객체를 찾는 함수
+CanvasObject* CanvasPanel::GetTopMostObjectAtPosition(const wxPoint& pos) const {
     for (auto it = m_objects.rbegin(); it != m_objects.rend(); ++it) {
-        if ((*it)->isMouseNearEdge(pos, 10)) { 
-            bool isSelected = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), *it) != m_selectedObjects.end();
+        if ((*it)->isMouseNearEdge(pos, 10) || (*it)->isMouseInside(pos)) {
+            return *it;
+        }
+    }
+    return nullptr;
+}
 
-            if (!isCtrlDown && !isSelected) {
-                m_selectedObjects.clear();
-                m_originalPositions.clear();
-            }
+// 객체의 가장자리 클릭을 처리하는 함수 (리사이징)
+void CanvasPanel::HandleEdgeClick(CanvasObject* obj, const wxPoint& pos, bool isCtrlDown) {
+    bool isSelected = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), obj) != m_selectedObjects.end();
 
-            // 리사이징을 위한 선택
-            if (std::find(m_selectedObjects.begin(), m_selectedObjects.end(), *it) == m_selectedObjects.end()) {
-                m_selectedObjects.push_back(*it);
-                m_originalPositions.push_back((*it)->GetPosition());
-            }
+    if (!isCtrlDown && !isSelected) {
+        m_selectedObjects.clear();
+        m_originalPositions.clear();
+    }
 
-            LineObject* lineObj = dynamic_cast<LineObject*>(*it);
-            if (lineObj) {
-                wxRect startRect(lineObj->GetPosition() - wxPoint(5, 5), wxSize(10, 10));
-                wxRect endRect(lineObj->GetEndPoint() - wxPoint(5, 5), wxSize(10, 10));
+    // 리사이징을 위한 선택
+    if (!isSelected) {
+        m_selectedObjects.push_back(obj);
+        m_originalPositions.push_back(obj->GetPosition());
+    }
 
-                if (startRect.Contains(pos)) {
-                    m_resizingStartPoint = true;
-                } else if (endRect.Contains(pos)) {
-                    m_resizingStartPoint = false;
-                }
-            }
+    LineObject* lineObj = dynamic_cast<LineObject*>(obj);
+    if (lineObj) {
+        wxRect startRect(lineObj->GetPosition() - wxPoint(5, 5), wxSize(10, 10));
+        wxRect endRect(lineObj->GetEndPoint() - wxPoint(5, 5), wxSize(10, 10));
 
-            m_isResizing = true; 
-            m_resizeStartPos = pos;
-
-            // PropertyPanel에 선택된 객체 전달
-            if (m_propertyPanel) {
-                m_propertyPanel->SetSelectedObjects(m_selectedObjects);
-            }
-
-            Refresh(); 
-            return;
-        } 
-        else if ((*it)->isMouseInside(pos)) { 
-            bool isSelected = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), *it) != m_selectedObjects.end();
-
-            if (isCtrlDown) {
-                // Ctrl 키가 눌려있으면 토글 선택
-                auto it_selected = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), *it);
-                if (it_selected != m_selectedObjects.end()) {
-                    // 이미 선택된 객체면 선택 해제
-                    size_t index = std::distance(m_selectedObjects.begin(), it_selected);
-                    m_selectedObjects.erase(it_selected);
-                    m_originalPositions.erase(m_originalPositions.begin() + index);
-                } else {
-                    // 선택되지 않은 객체면 선택 추가
-                    m_selectedObjects.push_back(*it);
-                    m_originalPositions.push_back((*it)->GetPosition());
-                }
-            } else {
-                if (!isSelected) {
-                    // Ctrl 키가 눌려있지 않고 클릭한 객체가 선택되지 않은 경우
-                    // 기존 선택 해제하고 새로 선택
-                    m_selectedObjects.clear();
-                    m_originalPositions.clear();
-                    m_selectedObjects.push_back(*it);
-                    m_originalPositions.push_back((*it)->GetPosition());
-                }
-                // 만약 클릭한 객체가 이미 선택된 상태라면, 선택을 유지함
-                // 따라서 멀티 선택 상태가 유지됨
-            }
-
-            m_isDragging = true;  
-            m_dragStartPos = pos;
-
-            // PropertyPanel에 선택된 객체 전달
-            if (m_propertyPanel) {
-                m_propertyPanel->SetSelectedObjects(m_selectedObjects);
-            }
-
-            Refresh(); 
-            return;
+        if (startRect.Contains(pos)) {
+            m_resizingStartPoint = true;
+        } else if (endRect.Contains(pos)) {
+            m_resizingStartPoint = false;
         }
     }
 
-    // 클릭한 위치에 객체가 없고 Ctrl 키가 눌리지 않은 경우
-    if (!event.CmdDown()) { // Mac에서는 Cmd, Windows에서는 Ctrl
+    m_isResizing = true; 
+    m_resizeStartPos = pos;
+
+    // PropertyPanel에 선택된 객체 전달
+    if (m_propertyPanel) {
+        m_propertyPanel->SetSelectedObjects(m_selectedObjects);
+    }
+
+    Refresh(); 
+}
+
+// 객체 클릭을 처리하는 함수 
+void CanvasPanel::HandleObjectClick(CanvasObject* obj, const wxPoint& pos, bool isCtrlDown) {
+    bool isSelected = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), obj) != m_selectedObjects.end();
+
+    if (isCtrlDown) {
+        ToggleSelection(obj);
+    } else {
+        if (!isSelected) {
+            m_selectedObjects.clear();
+            m_originalPositions.clear();
+            m_selectedObjects.push_back(obj);
+            m_originalPositions.push_back(obj->GetPosition());
+        }
+        // 이미 선택된 객체라면 선택을 유지함
+    }
+
+    m_isDragging = true;  
+    m_dragStartPos = pos;
+
+    // PropertyPanel에 선택된 객체 전달
+    if (m_propertyPanel) {
+        m_propertyPanel->SetSelectedObjects(m_selectedObjects);
+    }
+
+    Refresh(); 
+}
+
+// 빈 공간 클릭을 처리하는 함수 (선택 해제 및 선택 영역 시작)
+void CanvasPanel::HandleEmptySpaceClick(const wxPoint& pos, bool isCtrlDown) {
+    if (!isCtrlDown) { // Mac에서는 Cmd, Windows에서는 Ctrl
         m_selectedObjects.clear();
         m_originalPositions.clear();
 
@@ -196,125 +212,151 @@ void CanvasPanel::OnMouseClickStart(wxMouseEvent& event) {
     Refresh(); 
 }
 
+// 선택을 토글하는 함수
+void CanvasPanel::ToggleSelection(CanvasObject* obj) {
+    auto it_selected = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), obj);
+    if (it_selected != m_selectedObjects.end()) {
+        // 이미 선택된 객체면 선택 해제
+        size_t index = std::distance(m_selectedObjects.begin(), it_selected); 
+        m_selectedObjects.erase(it_selected);
+        m_originalPositions.erase(m_originalPositions.begin() + index);
+    } else {
+        // 선택되지 않은 객체면 선택 추가
+        m_selectedObjects.push_back(obj);
+        m_originalPositions.push_back(obj->GetPosition());
+    }
+}
+
 // 마우스가 움직일 때 호출되는 함수 (이동 또는 크기 조정)
 void CanvasPanel::OnMouseMove(wxMouseEvent& event) {
     wxPoint currentPos = event.GetPosition();
 
+    // 사용자가 빈 공간을 클릭한 후, 드래그하여 여러 객체를 선택할 수 있는 영역을 지정하고 있는 상태
     if (m_isSelecting) {
         m_selectionEndPos = currentPos;
         Refresh();
         return;
     }
 
-    // 위치 변경 처리
+    // 객체들이 이미 선택이 되어서 드래그 하고 있는 경우
     if (m_isDragging && !m_isResizing && !m_selectedObjects.empty()) {
-        wxPoint delta = currentPos - m_dragStartPos;
-
-        for (size_t i = 0; i < m_selectedObjects.size(); ++i) {
-            wxPoint newPosition = m_originalPositions[i] + delta; 
-            m_selectedObjects[i]->SetPosition(newPosition);
-        }
-
-        // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
-        if (m_selectedObjects.size() == 1 && m_propertyPanel) {
-            m_propertyPanel->SetSelectedObjects(m_selectedObjects);
-        }
-
-        Refresh();  
-    }
-
-    // 크기 변경 처리
-    if (m_isResizing && !m_selectedObjects.empty()) {
-        for (auto& obj : m_selectedObjects) {
-            LineObject* lineObj = dynamic_cast<LineObject*>(obj);
-            if (lineObj) {
-                if (m_resizingStartPoint) {
-                    lineObj->SetStartPoint(currentPos);
-                } else {
-                    lineObj->SetEndPoint(currentPos);
-                }
-            } else {
-                // 다른 객체의 크기 조정 처리 (기존 코드 유지)
-                wxPoint delta = currentPos - m_resizeStartPos;
-                wxSize newSize = m_originalSize;
-                newSize.SetWidth(m_originalSize.GetWidth() + delta.x);
-                newSize.SetHeight(m_originalSize.GetHeight() + delta.y);
-
-                if (newSize.GetWidth() < 10) newSize.SetWidth(10);
-                if (newSize.GetHeight() < 10) newSize.SetHeight(10);
-
-                obj->SetSize(newSize);
-            }
-        }
-
-        // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
-        if (m_selectedObjects.size() == 1 && m_propertyPanel) {
-            m_propertyPanel->SetSelectedObjects(m_selectedObjects);
-        }
-
-        Refresh();  
-    }
-
-    // 커서 변경: 리사이징 가능한지 확인
-    if (!m_isResizing && !m_isDragging && !m_isSelecting) {
-        bool onEdge = false;
-        for (auto it = m_objects.rbegin(); it != m_objects.rend(); ++it) {
-            if ((*it)->isMouseNearEdge(currentPos, 10)) { 
-                SetCursor(wxCURSOR_CROSS); // 리사이징 가능하다는 것을 나타내는 커서
-                onEdge = true;
-                break;
-            }
-        }
-        if (!onEdge) {
-            SetCursor(wxCURSOR_ARROW);
-        }
-    }
-}
-
-// 마우스 버튼을 뗐을 때 호출되는 함수
-void CanvasPanel::OnMouseClickEnd(wxMouseEvent& event) {
-    m_isMouseClicked = false; 
-    m_isDragging = false; 
-    m_isResizing = false; 
-
-    // 선택 영역 드래그가 끝났을 때
-    if (m_isSelecting) {
-        m_isSelecting = false;
-
-        int left = std::min(m_selectionStartPos.x, m_selectionEndPos.x);
-        int top = std::min(m_selectionStartPos.y, m_selectionEndPos.y);
-        int right = std::max(m_selectionStartPos.x, m_selectionEndPos.x);
-        int bottom = std::max(m_selectionStartPos.y, m_selectionEndPos.y);
-
-        wxRect selectionRect(left, top, right - left, bottom - top);
-
-        m_selectedObjects.clear();
-        m_originalPositions.clear();
-
-        // 선택 영역 내에 있는 모든 객체를 선택
-        for (auto& obj : m_objects) {
-            wxRect objRect(obj->GetPosition(), obj->GetSize());
-            if (selectionRect.Intersects(objRect)) {
-                // 중복 선택 방지
-                if (std::find(m_selectedObjects.begin(), m_selectedObjects.end(), obj) == m_selectedObjects.end()) {
-                    m_selectedObjects.push_back(obj);
-                    m_originalPositions.push_back(obj->GetPosition());
-                }
-            }
-        }
-
-        // PropertyPanel에 선택된 객체 전달
-        if (m_propertyPanel) {
-            m_propertyPanel->SetSelectedObjects(m_selectedObjects);
-        }
-
+        HandleDragging(currentPos);
         Refresh();
+        return;
+    }
+
+    // 리사이징 중일 때
+    if (m_isResizing && !m_selectedObjects.empty()) {
+        HandleResizing(currentPos);
+        Refresh();
+        return;
+    }
+
+    // 드래그도 리사이징도 아닌 경우, 커서 상태 업데이트
+    UpdateCursorState(currentPos);
+}
+
+// 드래깅 처리 함수
+void CanvasPanel::HandleDragging(const wxPoint& currentPos) {
+    wxPoint delta = currentPos - m_dragStartPos;
+
+    for (size_t i = 0; i < m_selectedObjects.size(); ++i) {
+        wxPoint newPosition = m_originalPositions[i] + delta; 
+        m_selectedObjects[i]->SetPosition(newPosition);
+    }
+
+    // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
+    if (m_selectedObjects.size() == 1 && m_propertyPanel) {
+        m_propertyPanel->SetSelectedObjects(m_selectedObjects);
     }
 }
+
+// 리사이징 처리 함수
+void CanvasPanel::HandleResizing(const wxPoint& currentPos) {
+    for (auto& obj : m_selectedObjects) {
+        LineObject* lineObj = dynamic_cast<LineObject*>(obj);
+        if (lineObj) {
+            if (m_resizingStartPoint) {
+                lineObj->SetStartPoint(currentPos);
+            } else {
+                lineObj->SetEndPoint(currentPos);
+            }
+        } else {
+            ResizeOtherObject(obj, currentPos);
+        }
+    }
+
+    // 선택된 객체가 단일 객체인 경우 PropertyPanel 업데이트
+    if (m_selectedObjects.size() == 1 && m_propertyPanel) {
+        m_propertyPanel->SetSelectedObjects(m_selectedObjects);
+    }
+}
+
+// 다른 객체의 리사이징 처리 함수
+void CanvasPanel::ResizeOtherObject(CanvasObject* obj, const wxPoint& currentPos) {
+    wxPoint delta = currentPos - m_resizeStartPos;
+    wxSize newSize = m_originalSize;
+    newSize.SetWidth(newSize.GetWidth() + delta.x);
+    newSize.SetHeight(newSize.GetHeight() + delta.y);
+
+    // 최소 크기 제한
+    newSize.SetWidth(std::max(newSize.GetWidth(), 10));
+    newSize.SetHeight(std::max(newSize.GetHeight(), 10));
+
+    obj->SetSize(newSize);
+}
+
+// 커서 상태 업데이트 함수
+void CanvasPanel::UpdateCursorState(const wxPoint& currentPos) {
+    bool onEdge = std::any_of(m_objects.rbegin(), m_objects.rend(),
+        [&](CanvasObject* obj) -> bool {
+            return obj->isMouseNearEdge(currentPos, 10);
+        });
+
+    SetCursor(onEdge ? wxCURSOR_CROSS : wxCURSOR_ARROW);
+}
+
+
+void CanvasPanel::OnMouseClickEnd(wxMouseEvent& event) {
+    m_isMouseClicked = false;
+    m_isDragging = false;
+    m_isResizing = false;
+
+    if (!m_isSelecting) return; // 
+    m_isSelecting = false;
+
+    // 선택 영역 정의
+    wxRect selectionRect = CalculateSelectionRect();
+
+    m_selectedObjects.clear();
+    m_originalPositions.clear();
+
+    // 선택 영역 내에 있는 모든 객체 선택
+    for (auto& obj : m_objects) {
+        wxRect objRect(obj->GetPosition(), obj->GetSize());
+        if (!selectionRect.Intersects(objRect)) continue;
+
+        // 중복 선택 방지 후 객체 추가
+        if (std::find(m_selectedObjects.begin(), m_selectedObjects.end(), obj) == m_selectedObjects.end()) {
+            m_selectedObjects.push_back(obj);
+            m_originalPositions.push_back(obj->GetPosition());
+        }
+    }
+
+    // PropertyPanel에 선택된 객체 전달
+    if (m_propertyPanel) {
+        m_propertyPanel->SetSelectedObjects(m_selectedObjects);
+    }
+
+    Refresh();
+}
+
 
 // 화면 갱신
 void CanvasPanel::OnPaint(wxPaintEvent& event) {
     wxPaintDC dc(this); 
+
+    // 존재하는 모든 객체를 그린다.
     for (CanvasObject* object : m_objects) {
         object->Draw(dc);  
     }
@@ -346,13 +388,7 @@ void CanvasPanel::OnPaint(wxPaintEvent& event) {
 
     // 선택 영역 드래그 중인 경우 선택 영역 그리기
     if (m_isSelecting) {
-        int left = std::min(m_selectionStartPos.x, m_selectionEndPos.x);
-        int top = std::min(m_selectionStartPos.y, m_selectionEndPos.y);
-        int right = std::max(m_selectionStartPos.x, m_selectionEndPos.x);
-        int bottom = std::max(m_selectionStartPos.y, m_selectionEndPos.y);
-
-        wxRect selectionRect(left, top, right - left, bottom - top);
-
+        wxRect selectionRect = CalculateSelectionRect();
         dc.SetPen(wxPen(wxColour(0, 120, 215), 1, wxPENSTYLE_SHORT_DASH));
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
         dc.DrawRectangle(selectionRect);
@@ -363,21 +399,36 @@ void CanvasPanel::OnPaint(wxPaintEvent& event) {
 void CanvasPanel::OnLeftDClick(wxMouseEvent& event) {
     wxPoint pos = event.GetPosition();
 
-    // 마우스 위치에 있는 객체를 찾음
+    // 마우스 위치에 있는 텍스트 객체를 찾음
     for (auto it = m_objects.rbegin(); it != m_objects.rend(); ++it) {
-        if ((*it)->isMouseInside(pos)) {
-            TextObject* textObject = dynamic_cast<TextObject*>(*it);
-            if (textObject) {
-                // 텍스트 입력 대화 상자를 열어 사용자가 텍스트를 입력할 수 있게 함
-                wxTextEntryDialog dialog(this, "텍스트를 입력하세요:", "텍스트 수정", textObject->GetText());
-
-                if (dialog.ShowModal() == wxID_OK) {
-                    // 사용자 입력값으로 텍스트 업데이트
-                    textObject->SetText(dialog.GetValue().ToStdString());
-                    Refresh(); 
-                }
-                return; 
-            }
+        
+        // 마우스가 객체 내부에 없으면 다음 객체로
+        if (!(*it)->isMouseInside(pos)) {
+            continue; 
         }
+
+        // 텍스트 객체가 아니면 다음 객체로
+        auto* textObject = dynamic_cast<TextObject*>(*it);
+        if (!textObject) {
+            continue;
+        }
+
+        wxTextEntryDialog dialog(this, "텍스트를 입력하세요:", "텍스트 수정", textObject->GetText());
+
+        // 사용자 입력값으로 텍스트 업데이트
+        if (dialog.ShowModal() == wxID_OK) {
+            textObject->SetText(dialog.GetValue().ToStdString());
+            Refresh();
+        }
+        return; 
     }
+}
+
+wxRect CanvasPanel::CalculateSelectionRect() const {
+    int left = std::min(m_selectionStartPos.x, m_selectionEndPos.x);
+    int top = std::min(m_selectionStartPos.y, m_selectionEndPos.y);
+    int right = std::max(m_selectionStartPos.x, m_selectionEndPos.x);
+    int bottom = std::max(m_selectionStartPos.y, m_selectionEndPos.y);
+
+    return wxRect(left, top, right - left, bottom - top);
 }

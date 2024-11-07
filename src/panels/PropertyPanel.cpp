@@ -279,79 +279,61 @@ void PropertyPanel::OnFontSizeChanged(wxCommandEvent& event) {
     }
 }
 
-// 이미지 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddImage(wxCommandEvent& event) {
     if (m_canvasPanel) {
-        // 이미지 파일 선택 대화상자 열기
+
         wxFileDialog openFileDialog(this, _("이미지 파일 선택"), "", "",
             "이미지 파일 (*.png;*.jpg;*.bmp)|*.png;*.jpg;*.bmp", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
 
         if (openFileDialog.ShowModal() == wxID_CANCEL)
             return;
 
-        // 이미지 로드
         wxImage image;
         if (!image.LoadFile(openFileDialog.GetPath()))
             return;
 
         wxBitmap bitmap(image);
-
-        // 이미지 객체 생성
         ImageObject* imageObject = new ImageObject(wxPoint(50, 50), bitmap.GetSize(), bitmap);
 
-        // 캔버스에 추가
         m_canvasPanel->AddObject(imageObject);
         m_canvasPanel->RefreshCanvas();
     }
 }
 
-// 텍스트 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddText(wxCommandEvent& event) {
     if (m_canvasPanel) {
-        // 임의의 위치과 크기 설정
-        wxPoint position(100, 100); // 기본 위치
-        wxSize size(100, 30);       // 기본 크기
+        wxPoint position(100, 100);
+        wxSize size(100, 30); 
 
-        // 텍스트 객체 생성
         TextObject* text = new TextObject(position, size, "텍스트");
 
-        // 캔버스에 텍스트 객체 추가
         m_canvasPanel->AddObject(text);
         m_canvasPanel->RefreshCanvas();
     }
 }
 
-// 선 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddLine(wxCommandEvent& event) {
     if (m_canvasPanel) {
-        // 선 객체 생성
         LineObject* line = new LineObject(wxPoint(50, 50), wxPoint(150, 150));
 
-        // 캔버스에 추가
         m_canvasPanel->AddObject(line);
         m_canvasPanel->RefreshCanvas();
     }
 }
 
-// 사각형 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddRectangle(wxCommandEvent& event) { 
     if (m_canvasPanel) {
-        // 사각형 객체 생성
         RectangleObject* rect = new RectangleObject(wxPoint(100, 100), wxSize(100, 50));
 
-        // 캔버스에 추가
         m_canvasPanel->AddObject(rect);
         m_canvasPanel->RefreshCanvas();
     }
 }
 
-// 타원 추가 버튼 클릭 시 호출
 void PropertyPanel::OnAddEllipse(wxCommandEvent& event) {
     if (m_canvasPanel) {
-        // 타원 객체 생성
         EllipseObject* ellipse = new EllipseObject(wxPoint(200, 200), wxSize(80, 80));
 
-        // 캔버스에 추가
         m_canvasPanel->AddObject(ellipse);
         m_canvasPanel->RefreshCanvas();
     }
